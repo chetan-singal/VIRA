@@ -1,0 +1,50 @@
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Java
+backend/target/
+*.class
+*.jar
+*.war
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary/build
+*.tmp
+*.temp
+build/
+out/
+release/
+dist-electron/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+application-local.properties
+application-secret.properties
