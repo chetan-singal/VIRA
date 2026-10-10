@@ -1,0 +1,4 @@
+CREATE TABLE shop_profile (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    shop_name VARCHAR(150) NOT NULL DEFAULT 'VIRA'
+);
