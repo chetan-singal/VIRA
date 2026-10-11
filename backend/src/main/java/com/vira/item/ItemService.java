@@ -41,11 +41,12 @@ public class ItemService {
         this.cashRates = cashRates;
     }
 
-    @Transactional(readOnly = true)
+        @Transactional(readOnly = true)
     public PageResponse<ItemResponse> list(String q, ItemType type, Long categoryId, Pageable pageable) {
-        Specification<Item> spec = Specification.where(ItemSpecifications.nameContains(q))
-                .and(ItemSpecifications.hasType(type))
-                .and(ItemSpecifications.inCategory(categoryId));
+        Specification<Item> spec = Specification.allOf(
+                ItemSpecifications.nameContains(q),
+                ItemSpecifications.hasType(type),
+                ItemSpecifications.inCategory(categoryId));
         return PageResponse.of(items.findAll(spec, pageable).map(i -> toResponse(i, null)));
     }
 
