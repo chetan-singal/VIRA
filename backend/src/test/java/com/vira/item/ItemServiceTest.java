@@ -2,7 +2,7 @@ package com.vira.item;
 
 import com.vira.common.FieldValidationException;
 import com.vira.common.NotFoundException;
-import com.vira.pricing.ItemType;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

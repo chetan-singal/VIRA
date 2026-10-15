@@ -1,6 +1,5 @@
 package com.vira.item;
 
-import com.vira.pricing.ItemType;
 import org.springframework.data.jpa.domain.Specification;
 
 public final class ItemSpecifications {

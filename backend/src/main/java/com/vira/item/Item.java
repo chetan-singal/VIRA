@@ -1,6 +1,5 @@
 package com.vira.item;
 
-import com.vira.pricing.ItemType;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;

@@ -1,7 +1,5 @@
 package com.vira.item;
 
-import com.vira.pricing.ItemType;
-
 import java.math.BigDecimal;
 import java.util.List;
 

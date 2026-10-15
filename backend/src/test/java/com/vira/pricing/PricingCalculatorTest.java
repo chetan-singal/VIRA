@@ -2,6 +2,8 @@ package com.vira.pricing;
 
 import org.junit.jupiter.api.Test;
 
+import com.vira.item.ItemType;
+
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;

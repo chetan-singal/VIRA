@@ -5,6 +5,8 @@ import com.vira.common.Money;
 import com.vira.common.NotFoundException;
 import com.vira.item.Item;
 import com.vira.item.ItemRepository;
+import com.vira.item.ItemType;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
