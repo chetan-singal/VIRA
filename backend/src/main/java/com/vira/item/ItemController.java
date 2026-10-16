@@ -47,4 +47,15 @@ public class ItemController {
     public void delete(@PathVariable Long id) {
         itemService.delete(id);
     }
+
+    @GetMapping("/{id}/rate-overrides")
+    public RateOverridesResponse getRateOverrides(@PathVariable Long id) {
+        return itemService.rateOverrides(id);
+    }
+
+    @DeleteMapping("/{id}/rate-overrides")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteRateOverrides(@PathVariable Long id) {
+        itemService.clearRateOverrides(id);
+    }
 }

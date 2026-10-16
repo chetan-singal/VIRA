@@ -1,12 +1,19 @@
 package com.vira.item;
 
+import com.vira.common.BusinessRuleException;
 import com.vira.common.FieldValidationException;
 import com.vira.common.NotFoundException;
+import com.vira.pricing.CashItemRate;
+import com.vira.pricing.CashItemRateRepository;
+import com.vira.pricing.PartyItemRate;
+import com.vira.pricing.PartyItemRateRepository;
+import com.vira.support.TestData;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +31,9 @@ class ItemServiceTest {
     @Autowired private ItemService itemService;
     @Autowired private PartCategoryRepository categories;
     @Autowired private BikeRepository bikes;
+    @Autowired private PartyItemRateRepository partyRates;
+    @Autowired private CashItemRateRepository cashRates;
+    @Autowired private JdbcTemplate jdbc;
 
     private static BigDecimal bd(String s) { return new BigDecimal(s); }
 
@@ -128,5 +138,56 @@ class ItemServiceTest {
 
         assertThatThrownBy(() -> itemService.get(created.id()))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void typeChangeBlockedByPartyOverride() {
+        ItemResponse item = itemService.create(mrpRequest("Brake Pad", null, null));
+        Long partyId = TestData.insertParty(jdbc, "Test Party");
+        PartyItemRate override = new PartyItemRate(partyId, item.id());
+        override.setDiscountPercent(bd("15.00"));
+        partyRates.save(override);
+
+        assertThatThrownBy(() -> itemService.update(item.id(), netRateRequest("Brake Pad")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasFieldOrPropertyWithValue("code", "ITEM_TYPE_LOCKED");
+    }
+
+    @Test
+    void typeChangeBlockedByCashOverride() {
+        ItemResponse item = itemService.create(mrpRequest("Chain", null, null));
+        CashItemRate override = new CashItemRate(item.id());
+        override.setDiscountPercent(bd("15.00"));
+        cashRates.save(override);
+
+        assertThatThrownBy(() -> itemService.update(item.id(), netRateRequest("Chain")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasFieldOrPropertyWithValue("code", "ITEM_TYPE_LOCKED");
+    }
+
+    @Test
+    void typeChangeSucceedsAfterOverridesCleared() {
+        ItemResponse item = itemService.create(mrpRequest("Clutch Plate", null, null));
+        Long partyId = TestData.insertParty(jdbc, "Another Party");
+        PartyItemRate override = new PartyItemRate(partyId, item.id());
+        override.setDiscountPercent(bd("15.00"));
+        partyRates.save(override);
+
+        itemService.clearRateOverrides(item.id());
+
+        ItemResponse updated = itemService.update(item.id(), netRateRequest("Clutch Plate"));
+        assertThat(updated.itemType()).isEqualTo(ItemType.NET_RATE);
+    }
+
+    @Test
+    void sameTypeEditAllowedWhileOverridesExist() {
+        ItemResponse item = itemService.create(mrpRequest("Brake Cable", null, null));
+        Long partyId = TestData.insertParty(jdbc, "Yet Another Party");
+        PartyItemRate override = new PartyItemRate(partyId, item.id());
+        override.setDiscountPercent(bd("15.00"));
+        partyRates.save(override);
+
+        ItemResponse updated = itemService.update(item.id(), mrpRequest("Brake Cable - Updated", null, null));
+        assertThat(updated.name()).isEqualTo("Brake Cable - Updated");
     }
 }

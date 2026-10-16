@@ -75,7 +75,24 @@ public class ItemService {
         apply(item, r);
         return toResponse(item, hasOverrides(id));
     }
+    @Transactional
+    public void clearRateOverrides(Long id) {
+        find(id);                       // 404 if the item doesn't exist
+        partyRates.deleteAllByItemId(id);
+        cashRates.deleteAllByItemId(id);
+    }
 
+    @Transactional(readOnly = true)
+    public RateOverridesResponse rateOverrides(Long id) {
+        find(id);
+        var cash = cashRates.findByItemId(id)
+            .map(c -> new RateOverridesResponse.CashOverride(c.getDiscountPercent(), c.getNetRate()))
+            .orElse(null);
+        var parties = partyRates.findByItemId(id).stream()
+            .map(p -> new RateOverridesResponse.PartyOverride(p.getPartyId(), p.getDiscountPercent(), p.getNetRate()))
+            .toList();
+        return new RateOverridesResponse(cash, parties);
+    }
     @Transactional
     public void delete(Long id) {
         items.delete(find(id));
