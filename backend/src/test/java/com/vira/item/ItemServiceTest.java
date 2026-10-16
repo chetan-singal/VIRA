@@ -1,5 +1,6 @@
 package com.vira.item;
-
+import jakarta.persistence.EntityManager;
+import java.util.Map;
 import com.vira.common.BusinessRuleException;
 import com.vira.common.FieldValidationException;
 import com.vira.common.NotFoundException;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class ItemServiceTest {
 
+    @Autowired private EntityManager entityManager;
     @Autowired private ItemService itemService;
     @Autowired private PartCategoryRepository categories;
     @Autowired private BikeRepository bikes;
@@ -189,5 +191,46 @@ class ItemServiceTest {
 
         ItemResponse updated = itemService.update(item.id(), mrpRequest("Brake Cable - Updated", null, null));
         assertThat(updated.name()).isEqualTo("Brake Cable - Updated");
+    }
+        @Test
+    void deletingAnItemKeepsTheBillLineSnapshot() {
+        Long categoryId = categories.save(new PartCategory("Brakes")).getId();
+        Long bikeId = bikes.save(new Bike("Splendor")).getId();
+        ItemResponse item = itemService.create(mrpRequest("Brake Pad", categoryId, Set.of(bikeId)));
+
+        Long partyId = TestData.insertParty(jdbc, "Snapshot Party");
+        PartyItemRate partyOverride = new PartyItemRate(partyId, item.id());
+        partyOverride.setDiscountPercent(bd("12.00"));
+        partyRates.save(partyOverride);
+
+        CashItemRate cashOverride = new CashItemRate(item.id());
+        cashOverride.setDiscountPercent(bd("8.00"));
+        cashRates.save(cashOverride);
+
+        Long billId = TestData.insertCashBill(jdbc, "C-1");
+        TestData.insertBillLine(jdbc, billId, item.id(), "Brake Pad", "Pcs", "500.00", "10.00", "450.00", 2, 1);
+
+        itemService.delete(item.id());
+        entityManager.flush();
+        entityManager.clear();
+
+        Map<String, Object> line = jdbc.queryForMap(
+                "select item_id, item_name_snapshot, unit_snapshot, rate_snapshot, qty from bill_item where bill_id = ?",
+                billId);
+        assertThat(line.get("item_id")).isNull();
+        assertThat(line.get("item_name_snapshot")).isEqualTo("Brake Pad");
+        assertThat(line.get("unit_snapshot")).isEqualTo("Pcs");
+        assertThat((BigDecimal) line.get("rate_snapshot")).isEqualByComparingTo("450.00");
+        assertThat(line.get("qty")).isEqualTo(2);
+
+        assertThat(partyRates.existsByItemId(item.id())).isFalse();
+        assertThat(cashRates.existsByItemId(item.id())).isFalse();
+
+        Integer itemBikeCount = jdbc.queryForObject(
+                "select count(*) from item_bike where item_id = ?", Integer.class, item.id());
+        assertThat(itemBikeCount).isZero();
+
+        assertThat(bikes.existsById(bikeId)).isTrue();
+        assertThat(categories.existsById(categoryId)).isTrue();
     }
 }
