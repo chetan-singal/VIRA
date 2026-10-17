@@ -231,7 +231,7 @@ CREATE TABLE supplier_payment (
 -- Single row (id fixed at 1). Created EMPTY: the row is written once by
 -- the first-run setup screen, so shop_name has no default.
 CREATE TABLE shop_profile (
-    id                        TINYINT       NOT NULL,
+    id                        BIGINT       NOT NULL,
     shop_name                 VARCHAR(150)  NOT NULL,
     address                   VARCHAR(255)  NULL,
     phone                     VARCHAR(20)   NULL,
@@ -262,7 +262,7 @@ CREATE TABLE shop_profile (
 
 -- Single row (id fixed at 1). May go negative (SRS §15.2).
 CREATE TABLE cash_in_hand (
-    id              TINYINT       NOT NULL,
+    id               BIGINT        NOT NULL,
     balance         DECIMAL(12,2) NOT NULL DEFAULT 0,
     last_updated_at DATETIME      NULL,
     PRIMARY KEY (id),

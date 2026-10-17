@@ -1,0 +1,68 @@
+@base = http://127.0.0.1:8080/api
+
+
+### 0a. See what categories already exist
+GET {{base}}/part-categories
+
+### 0b. See what bikes already exist
+GET {{base}}/bikes
+### 1. Create a category and a bike
+POST {{base}}/part-categories
+Content-Type: application/json
+
+{ "name": "Brakes" }
+
+###
+POST {{base}}/bikes
+Content-Type: application/json
+
+{ "name": "Splendor" }
+
+### 2. SRS §7.2 example: MRP 500, discount 10%
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "Brake Pad", "unit": "Pcs", "partCategoryId": 1, "bikeIds": [1],
+  "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
+
+### 3. Cash price -> expect rate 450.00
+GET {{base}}/pricing/quote?itemId=2&customer=CASH
+
+### 4. SRS §8.2: Cash discount 10 -> 15, permanently
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": 1, "customer": "CASH", "field": "DISCOUNT_PERCENT", "newValue": 15.00 }
+
+### 5. Cash price -> expect 425.00 (source CASH_OVERRIDE)
+GET {{base}}/pricing/quote?itemId=1&customer=CASH
+
+### 6. Try to change the type -> expect 409 ITEM_TYPE_LOCKED
+PUT {{base}}/items/1
+Content-Type: application/json
+
+{ "name": "Brake Pad", "unit": "Pcs", "partCategoryId": 1, "bikeIds": [1],
+  "itemType": "NET_RATE", "defaultNetRate": 450.00 }
+
+### 7. Remove the override, then retry step 6 -> expect 200
+DELETE {{base}}/items/1/rate-overrides
+
+### 8. Retry the type change -> now succeeds
+PUT {{base}}/items/1
+Content-Type: application/json
+
+{ "name": "Brake Pad", "unit": "Pcs", "partCategoryId": 1, "bikeIds": [1],
+  "itemType": "NET_RATE", "defaultNetRate": 450.00 }
+
+### 9. Permanent delete, then confirm it's gone
+DELETE {{base}}/items/1
+
+###
+GET {{base}}/items/1
+
+
+###
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": 2, "customer": "CASH", "field": "DISCOUNT_PERCENT", "newValue": 20.00 }
