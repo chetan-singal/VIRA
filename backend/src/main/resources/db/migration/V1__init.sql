@@ -149,7 +149,7 @@ CREATE TABLE bill (
     is_deleted          BOOLEAN       NOT NULL DEFAULT FALSE,
     deleted_at          DATETIME      NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uq_bill_bill_no UNIQUE (bill_no),
+    CONSTRAINT uq_bill_type_bill_no UNIQUE (bill_type, bill_no),
     CONSTRAINT fk_bill_party
         FOREIGN KEY (party_id) REFERENCES party (id) ON DELETE SET NULL,
     INDEX idx_bill_date (bill_date)
