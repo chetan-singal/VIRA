@@ -9,6 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+import com.vira.common.BusinessRuleException;
+import com.vira.voucher.PaymentMode;
+import com.vira.voucher.PaymentVoucherRequest;
+import com.vira.voucher.PaymentVoucherService;
+
+import java.time.LocalDate;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -18,7 +26,11 @@ class PartyServiceTest {
 
     @Autowired
     private PartyService partyService;
+    @Autowired
+    private PartyRepository partyRepository;
 
+    @Autowired
+    private PaymentVoucherService voucherService;
     @Test
     void createWithOpeningBalanceSeedsCurrentBalanceImmediately() {
         PartyResponse response = partyService.create(
@@ -46,5 +58,32 @@ class PartyServiceTest {
 
         assertThat(page.content()).hasSize(1);
         assertThat(page.content().get(0).name()).isEqualTo("Krishna Auto Parts");
+    }
+    @Test
+    void deleteAtNonZeroBalanceFailsThenZeroedBalanceSucceeds() {
+        PartyResponse party = partyService.create(
+                new PartyRequest("Delete Test Party", null, null, null, null, null, new BigDecimal("250.00")));
+
+        assertThatThrownBy(() -> partyService.delete(party.id()))
+                .isInstanceOf(BusinessRuleException.class)
+                .satisfies(e -> assertThat(((BusinessRuleException) e).getCode()).isEqualTo("PARTY_BALANCE_NOT_ZERO"));
+
+        voucherService.create(new PaymentVoucherRequest(
+                party.id(), LocalDate.now(), new BigDecimal("250.00"), PaymentMode.CASH, null, null));
+
+        partyService.delete(party.id());
+
+        assertThat(partyRepository.findById(party.id()).orElseThrow().isDeleted()).isTrue();
+    }
+
+    @Test
+    void restoreClearsDeletedFlag() {
+        PartyResponse party = partyService.create(
+                new PartyRequest("Restore Test Party", null, null, null, null, null, null));
+        partyService.delete(party.id());
+
+        partyService.restore(party.id());
+
+        assertThat(partyRepository.findById(party.id()).orElseThrow().isDeleted()).isFalse();
     }
 }

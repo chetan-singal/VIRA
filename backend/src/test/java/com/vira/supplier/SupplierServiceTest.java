@@ -17,6 +17,8 @@ class SupplierServiceTest {
     @Autowired
     private SupplierService supplierService;
 
+    @Autowired
+    private SupplierRepository supplierRepository;
     @Test
     void createSavesAllFields() {
         SupplierResponse response = supplierService.create(
@@ -37,4 +39,14 @@ class SupplierServiceTest {
         assertThat(page.content()).hasSize(1);
         assertThat(page.content().get(0).name()).isEqualTo("Hero Spares Co");
     }
+    @Test
+    void deleteWorksAtAnyBalanceAndRestoreClearsFlag() {
+        SupplierResponse supplier = supplierService.create(new SupplierRequest("Delete Test Supplier", null, null));
+
+        supplierService.delete(supplier.id());
+        assertThat(supplierRepository.findById(supplier.id()).orElseThrow().isDeleted()).isTrue();
+
+        supplierService.restore(supplier.id());
+        assertThat(supplierRepository.findById(supplier.id()).orElseThrow().isDeleted()).isFalse();
+}
 }

@@ -32,4 +32,15 @@ public class SupplierController {
     public SupplierResponse create(@Valid @RequestBody SupplierRequest request) {
         return supplierService.create(request);
     }
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        supplierService.delete(id);
+    }
+
+    @PostMapping("/{id}/restore")
+    public SupplierResponse restore(@PathVariable Long id) {
+        supplierService.restore(id);
+        return supplierService.get(id);
+    }
 }

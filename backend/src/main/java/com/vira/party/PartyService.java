@@ -1,5 +1,5 @@
 package com.vira.party;
-
+import java.time.LocalDateTime;
 import com.vira.common.BusinessRuleException;
 import com.vira.common.Money;
 import com.vira.common.NotFoundException;
@@ -56,13 +56,41 @@ public class PartyService {
         }
         return party;
     }
-
-    Party find(Long id) {
-        return parties.findById(id).orElseThrow(() -> new NotFoundException("Party " + id + " not found"));
+    @Transactional
+    public void delete(Long id) {
+        Party party = find(id);
+        if (party.isDeleted()) {
+            throw new BusinessRuleException("PARTY_ALREADY_DELETED", "This party is already deleted.");
+        }
+        if (party.getCurrentBalance().compareTo(BigDecimal.ZERO) != 0) {
+            throw new BusinessRuleException("PARTY_BALANCE_NOT_ZERO",
+                    "This party's balance must be exactly zero before it can be deleted.");
+        }
+        party.setDeleted(true);
+        party.setDeletedAt(LocalDateTime.now());
     }
 
-    private PartyResponse toResponse(Party p) {
-        return new PartyResponse(p.getId(), p.getName(), p.getPhone(), p.getAddress(),
-                p.getCity(), p.getState(), p.getRemarks(), p.getOpeningBalance(), p.getCurrentBalance());
+    @Transactional
+    public void restore(Long id) {
+        Party party = find(id);
+        if (!party.isDeleted()) {
+            throw new BusinessRuleException("PARTY_NOT_DELETED", "This party is not deleted.");
+        }
+        party.setDeleted(false);
+        party.setDeletedAt(null);
     }
+
+    @Transactional(readOnly = true)
+    public Party loadAny(Long id) {
+        return find(id);
+    }
+
+        Party find(Long id) {
+            return parties.findById(id).orElseThrow(() -> new NotFoundException("Party " + id + " not found"));
+        }
+
+        private PartyResponse toResponse(Party p) {
+            return new PartyResponse(p.getId(), p.getName(), p.getPhone(), p.getAddress(),
+                    p.getCity(), p.getState(), p.getRemarks(), p.getOpeningBalance(), p.getCurrentBalance());
+        }
 }

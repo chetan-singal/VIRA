@@ -32,4 +32,16 @@ public class PartyController {
     public PartyResponse create(@Valid @RequestBody PartyRequest request) {
         return partyService.create(request);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        partyService.delete(id);
+    }
+
+    @PostMapping("/{id}/restore")
+    public PartyResponse restore(@PathVariable Long id) {
+        partyService.restore(id);
+        return partyService.get(id);
+}
 }
