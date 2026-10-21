@@ -149,7 +149,7 @@ CREATE TABLE bill (
     is_deleted          BOOLEAN       NOT NULL DEFAULT FALSE,
     deleted_at          DATETIME      NULL,
     PRIMARY KEY (id),
-    CONSTRAINT uq_bill_type_bill_no UNIQUE (bill_type, bill_no),
+        CONSTRAINT uq_bill_no UNIQUE (bill_no),
     CONSTRAINT fk_bill_party
         FOREIGN KEY (party_id) REFERENCES party (id) ON DELETE SET NULL,
     INDEX idx_bill_date (bill_date)
@@ -288,11 +288,9 @@ CREATE TABLE app_setting (
 INSERT INTO cash_in_hand (id, balance) VALUES (1, 0);
 
 INSERT INTO number_sequence (sequence_name, next_value) VALUES
-    ('CASH_BILL',        1),
-    ('PARTY_BILL',       1),
+    ('BILL',             1),
     ('VOUCHER',          1),
     ('SUPPLIER_PAYMENT', 1);
-
 -- The SRS (§22.11) requires these five rows to exist with default values
 -- but does not say what the defaults are. These are placeholders to be
 -- revisited when the Settings screen is built.

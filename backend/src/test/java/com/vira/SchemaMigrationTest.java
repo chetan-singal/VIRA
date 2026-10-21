@@ -71,7 +71,7 @@ class SchemaMigrationTest {
     void seedRowsExistAndShopProfileIsEmpty() throws SQLException {
         try (Connection c = connect()) {
             assertEquals(1, count(c, "cash_in_hand"));
-            assertEquals(4, count(c, "number_sequence"));
+            assertEquals(3, count(c, "number_sequence"));
             assertEquals(5, count(c, "app_setting"));
             assertEquals(0, count(c, "shop_profile"));
 
@@ -85,7 +85,7 @@ class SchemaMigrationTest {
                     assertEquals(1, rs.getInt(2));
                 }
             }
-            assertEquals(Set.of("CASH_BILL", "PARTY_BILL", "VOUCHER", "SUPPLIER_PAYMENT"), sequences);
+            assertEquals(Set.of("BILL", "VOUCHER", "SUPPLIER_PAYMENT"), sequences);
 
             Set<String> settings = new HashSet<>();
             try (Statement s = c.createStatement();

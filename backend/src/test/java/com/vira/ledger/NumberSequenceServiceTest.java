@@ -21,9 +21,9 @@ class NumberSequenceServiceTest {
 
     @Test
     void sequentialCallsIncrementInOrder() {
-        int first = sequenceService.nextValue(NumberSequenceService.CASH_BILL);
-        int second = sequenceService.nextValue(NumberSequenceService.CASH_BILL);
-        int third = sequenceService.nextValue(NumberSequenceService.CASH_BILL);
+        int first = sequenceService.nextValue(NumberSequenceService.BILL);
+        int second = sequenceService.nextValue(NumberSequenceService.BILL);
+        int third = sequenceService.nextValue(NumberSequenceService.BILL);
 
         assertThat(first).isEqualTo(1);
         assertThat(second).isEqualTo(2);
@@ -32,12 +32,14 @@ class NumberSequenceServiceTest {
 
     @Test
     void sequencesAreIndependent() {
-        sequenceService.nextValue(NumberSequenceService.CASH_BILL);
-        sequenceService.nextValue(NumberSequenceService.CASH_BILL);
+        int before = sequenceService.nextValue(NumberSequenceService.SUPPLIER_PAYMENT);
 
-        int partyBillFirst = sequenceService.nextValue(NumberSequenceService.PARTY_BILL);
+        sequenceService.nextValue(NumberSequenceService.BILL);
+        sequenceService.nextValue(NumberSequenceService.BILL);
 
-        assertThat(partyBillFirst).isEqualTo(1);
+        int after = sequenceService.nextValue(NumberSequenceService.SUPPLIER_PAYMENT);
+
+        assertThat(after).isEqualTo(before + 1);
     }
 
     @Test

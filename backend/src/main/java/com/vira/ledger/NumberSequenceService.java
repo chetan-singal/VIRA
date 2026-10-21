@@ -8,8 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class NumberSequenceService {
 
-    public static final String CASH_BILL = "CASH_BILL";
-    public static final String PARTY_BILL = "PARTY_BILL";
+    public static final String BILL = "BILL";
     public static final String VOUCHER = "VOUCHER";
     public static final String SUPPLIER_PAYMENT = "SUPPLIER_PAYMENT";
 

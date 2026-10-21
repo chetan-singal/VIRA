@@ -61,9 +61,7 @@ public class BillService {
         bill.setRoundOff(roundOff);
         bill.setGrandTotal(grandTotal);
 
-        String sequence = r.billType() == BillType.CASH
-                ? NumberSequenceService.CASH_BILL : NumberSequenceService.PARTY_BILL;
-        bill.setBillNo(String.valueOf(numbers.nextValue(sequence)));
+                bill.setBillNo(String.valueOf(numbers.nextValue(NumberSequenceService.BILL)));
 
         Bill saved = bills.save(bill);
 

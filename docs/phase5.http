@@ -1,0 +1,291 @@
+@base = http://127.0.0.1:8080/api
+
+### Send each request ONCE, in order. Fresh database: cash baseline = 0.00
+### MySQL (USE vira;):  SELECT balance FROM cash_in_hand;
+
+### S1. Item (MRP 500, 10% -> rate 450)
+# @name item
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "P5 Brake Pad", "unit": "Pcs", "bikeIds": [],
+  "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
+
+### S2. Party A (opening 1000)
+# @name partyA
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "P5 Party A", "openingBalance": 1000.00 }
+
+### S3. Party B (opening 0)
+# @name partyB
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "P5 Party B", "openingBalance": 0.00 }
+
+### S4. Supplier
+# @name supplier
+POST {{base}}/suppliers
+Content-Type: application/json
+
+{ "name": "P5 Supplier" }
+
+### G1. Voucher 300 CASH on Party A
+# @name voucher
+POST {{base}}/payment-vouchers
+Content-Type: application/json
+
+{ "partyId": {{partyA.response.body.id}}, "paymentDate": "2026-10-21",
+  "amount": 300.00, "paymentMode": "CASH" }
+
+### G1 check: Party A = 700.00 ; MySQL cash = 300.00
+GET {{base}}/parties/{{partyA.response.body.id}}
+
+### G2. Supplier payment 200
+# @name supPay
+POST {{base}}/supplier-payments
+Content-Type: application/json
+
+{ "supplierId": {{supplier.response.body.id}}, "paymentDate": "2026-10-21",
+  "amount": 200.00, "paymentMode": "CASH" }
+
+### G2 check: MySQL cash = 100.00
+
+### A1. Cash Bill, qty 2 -> grandTotal 900.00, billNo "1"
+# @name cashBill
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "CASH", "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 2, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### A1 check: MySQL cash = 1000.00
+
+### A1. Edit qty 2 -> 3 (grandTotal 1350.00)
+PUT {{base}}/bills/{{cashBill.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "CASH", "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 3, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### A1 check: MySQL cash = 1450.00
+
+### A2. Edit that bill CASH -> PARTY (Party A). billNo must stay "1"
+PUT {{base}}/bills/{{cashBill.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyA.response.body.id}}, "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 3, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### A2 check: Party A = 2050.00 ; MySQL cash = 100.00
+GET {{base}}/parties/{{partyA.response.body.id}}
+
+### A3. NEW Party Bill on Party A, qty 1 -> must be 201 with billNo "2" (was the 409)
+# @name partyBill
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyA.response.body.id}}, "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### A3 check: Party A = 2500.00
+GET {{base}}/parties/{{partyA.response.body.id}}
+
+### A3b. Edit the new bill's party A -> B
+PUT {{base}}/bills/{{partyBill.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyB.response.body.id}}, "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### A3b check: Party A = 2050.00
+GET {{base}}/parties/{{partyA.response.body.id}}
+
+### A3b check: Party B = 450.00
+GET {{base}}/parties/{{partyB.response.body.id}}
+
+### A2b. Edit the first bill back PARTY -> CASH. billNo still "1"
+PUT {{base}}/bills/{{cashBill.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "CASH", "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 3, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### A2b check: Party A = 700.00 ; MySQL cash = 1450.00
+GET {{base}}/parties/{{partyA.response.body.id}}
+
+### A4. Voucher mode CASH -> ONLINE
+PUT {{base}}/payment-vouchers/{{voucher.response.body.id}}
+Content-Type: application/json
+
+{ "partyId": {{partyA.response.body.id}}, "paymentDate": "2026-10-21",
+  "amount": 300.00, "paymentMode": "ONLINE" }
+
+### A4 check: Party A = 700.00 ; MySQL cash = 1450.00 (unchanged)
+GET {{base}}/parties/{{partyA.response.body.id}}
+
+### FINAL (MySQL): SELECT id, bill_type, bill_no, party_id, grand_total, is_deleted FROM bill ORDER BY id;
+### Expect: (CASH, "1", NULL, 1350.00, 0) and (PARTY, "2", Party B, 450.00, 0)
+
+
+
+
+### ===== PART 2a =====
+
+### B1. Delete the Cash Bill (1350.00) -> 204
+DELETE {{base}}/bills/{{cashBill.response.body.id}}
+
+### B1 check: MySQL cash = 100.00
+### MySQL: SELECT id, bill_no, is_deleted FROM bill WHERE id = 1;       -> is_deleted = 1
+### MySQL: SELECT COUNT(*) FROM bill_item WHERE bill_id = 1;            -> 1 (line intact)
+
+### C1. Restore that bill -> 200, billNo must still be "1", grandTotal 1350.00
+POST {{base}}/bills/{{cashBill.response.body.id}}/restore
+
+### C1 check: MySQL cash = 1450.00
+
+### C1b. Edit works again (same values) -> 200
+PUT {{base}}/bills/{{cashBill.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "CASH", "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 3, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### C1b check: MySQL cash = 1450.00 (unchanged)
+
+### B2. Delete the Party Bill (450.00, Party B) -> 204
+DELETE {{base}}/bills/{{partyBill.response.body.id}}
+
+### B2 check: Party B = 0.00
+GET {{base}}/parties/{{partyB.response.body.id}}
+
+### B3. Delete the Supplier Payment (200.00) -> 204
+DELETE {{base}}/supplier-payments/{{supPay.response.body.id}}
+
+### B3 check: MySQL cash = 1650.00
+
+### C2. Delete the Supplier -> 204
+DELETE {{base}}/suppliers/{{supplier.response.body.id}}
+
+### C2. Restore the Supplier Payment while its Supplier is deleted -> must be REJECTED
+### (error code RESTORE_BLOCKED_SUPPLIER_DELETED)
+POST {{base}}/supplier-payments/{{supPay.response.body.id}}/restore
+
+### C2 check: MySQL cash still = 1650.00
+
+### C2. Restore the Supplier -> 200
+POST {{base}}/suppliers/{{supplier.response.body.id}}/restore
+
+### C2. Restore the Supplier Payment -> 200, paymentNo must still be "1"
+POST {{base}}/supplier-payments/{{supPay.response.body.id}}/restore
+
+### C2 check: MySQL cash = 1450.00
+
+
+
+
+
+
+### ===== PART 2b =====
+
+### S5. Party C (opening 0)
+# @name partyC
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "P5 Party C", "openingBalance": 0.00 }
+
+### D0. Party Bill on Party C, qty 1 -> 201, billNo "3", Party C = 450.00
+# @name billC
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyC.response.body.id}}, "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### D1. Delete Party C while its balance is 450.00 -> must be REJECTED (PARTY_BALANCE_NOT_ZERO)
+DELETE {{base}}/parties/{{partyC.response.body.id}}
+
+### D0b. Voucher 450 CASH on Party C -> Party C = 0.00
+# @name voucherC
+POST {{base}}/payment-vouchers
+Content-Type: application/json
+
+{ "partyId": {{partyC.response.body.id}}, "paymentDate": "2026-10-21",
+  "amount": 450.00, "paymentMode": "CASH" }
+
+### D0b check: MySQL cash = 1900.00
+### MySQL: SELECT id, name, current_balance, is_deleted FROM party;
+
+### D2. Delete Party C (balance 0.00) -> 204
+DELETE {{base}}/parties/{{partyC.response.body.id}}
+
+### D2. Edit Party C's bill -> must be REJECTED (PARTY_INACTIVE)
+PUT {{base}}/bills/{{billC.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyC.response.body.id}}, "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### D2. Delete Party C's bill -> must be REJECTED (PARTY_INACTIVE)
+DELETE {{base}}/bills/{{billC.response.body.id}}
+
+### D2. Edit Party C's voucher -> must be REJECTED (PARTY_INACTIVE)
+PUT {{base}}/payment-vouchers/{{voucherC.response.body.id}}
+Content-Type: application/json
+
+{ "partyId": {{partyC.response.body.id}}, "paymentDate": "2026-10-21",
+  "amount": 450.00, "paymentMode": "CASH" }
+
+### D2 check (MySQL): Party C current_balance = 0.00, is_deleted = 1 ; cash = 1900.00
+
+### D3. Restore Party C -> 200
+POST {{base}}/parties/{{partyC.response.body.id}}/restore
+
+### D3 check (MySQL): Party C current_balance = 0.00, is_deleted = 0 ; cash = 1900.00
+
+### D3. Edit Party C's bill works again -> 200
+PUT {{base}}/bills/{{billC.response.body.id}}
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyC.response.body.id}}, "billDate": "2026-10-21",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### D3 check: Party C = 0.00
+GET {{base}}/parties/{{partyC.response.body.id}}
+
+### E1. Delete the Item that is on the old bills -> 204
+DELETE {{base}}/items/{{item.response.body.id}}
+
+### E1. Restore the deleted Party B bill (bill 2). Lines must still show from the snapshot
+POST {{base}}/bills/{{partyBill.response.body.id}}/restore
+
+### E1 check: itemName "P5 Brake Pad", rate 450.00, amount 450.00 present (itemId null) ; Party B = 450.00
+GET {{base}}/parties/{{partyB.response.body.id}}
+### MySQL: SELECT bill_id, item_id, item_name_snapshot, rate_snapshot FROM bill_item;
+###        -> item_id NULL, names and rates intact
+
+### F1a. Recalculate preview on clean data -> storedCash = expectedCash = 1900.00, no party mismatches
+GET {{base}}/maintenance/recalculate-balances
+
+### F1b. Corrupt on purpose (run in MySQL):
+###   UPDATE cash_in_hand SET balance = balance + 50 WHERE id = 1;
+###   UPDATE party SET current_balance = current_balance + 25 WHERE name = 'P5 Party A';
+
+### F1c. Preview -> storedCash 1950.00 vs expectedCash 1900.00 ; Party A stored 725.00 vs expected 700.00
+GET {{base}}/maintenance/recalculate-balances
+
+### F1d. Correct cash
+POST {{base}}/maintenance/recalculate-balances/cash
+
+### F1d. Correct Party A
+POST {{base}}/maintenance/recalculate-balances/parties/{{partyA.response.body.id}}
+
+### F1e. Preview -> no mismatches ; MySQL cash = 1900.00, Party A = 700.00
+GET {{base}}/maintenance/recalculate-balances
+
+
+###
+POST http://127.0.0.1:8080/api/maintenance/recalculate-balances/cash
