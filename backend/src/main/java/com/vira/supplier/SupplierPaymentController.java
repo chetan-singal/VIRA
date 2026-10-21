@@ -20,4 +20,20 @@ public class SupplierPaymentController {
     public SupplierPaymentResponse create(@Valid @RequestBody SupplierPaymentRequest request) {
         return service.create(request);
     }
+
+    @PutMapping("/{id}")
+    public SupplierPaymentResponse edit(@PathVariable Long id, @Valid @RequestBody SupplierPaymentRequest request) {
+        return service.edit(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
+
+    @PostMapping("/{id}/restore")
+    public SupplierPaymentResponse restore(@PathVariable Long id) {
+        return service.restore(id);
+    }
 }

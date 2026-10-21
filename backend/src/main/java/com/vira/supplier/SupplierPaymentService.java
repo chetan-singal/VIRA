@@ -1,5 +1,6 @@
 package com.vira.supplier;
 
+import com.vira.common.BusinessRuleException;
 import com.vira.common.Money;
 import com.vira.common.NotFoundException;
 import com.vira.ledger.LedgerService;
@@ -7,6 +8,8 @@ import com.vira.ledger.NumberSequenceService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 public class SupplierPaymentService {
@@ -43,6 +46,62 @@ public class SupplierPaymentService {
         ledger.adjustCash(p.getAmount().negate());
 
         return toResponse(saved);
+    }
+
+    @Transactional
+    public SupplierPaymentResponse edit(Long id, SupplierPaymentRequest r) {
+        SupplierPayment p = find(id);
+        if (p.isDeleted()) {
+            throw new BusinessRuleException("PAYMENT_DELETED", "This payment is deleted. Restore it first.");
+        }
+        supplierService.loadActive(p.getSupplierId());
+
+        ledger.adjustCash(p.getAmount());
+
+        Supplier newSupplier = supplierService.loadActive(r.supplierId());
+        p.setSupplierId(newSupplier.getId());
+        p.setSupplierNameSnapshot(newSupplier.getName());
+        p.setPaymentDate(r.paymentDate());
+        p.setAmount(Money.round(r.amount()));
+        p.setPaymentMode(r.paymentMode());
+        p.setReferenceNo(r.referenceNo());
+        p.setRemarks(r.remarks());
+        p.setEdited(true);
+        p.setLastEditedAt(LocalDateTime.now());
+
+        SupplierPayment saved = payments.save(p);
+
+        ledger.adjustCash(p.getAmount().negate());
+
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        SupplierPayment p = find(id);
+        if (p.isDeleted()) {
+            throw new BusinessRuleException("PAYMENT_ALREADY_DELETED", "This payment is already deleted.");
+        }
+        supplierService.loadActive(p.getSupplierId());
+        ledger.adjustCash(p.getAmount());
+        p.setDeleted(true);
+        p.setDeletedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public SupplierPaymentResponse restore(Long id) {
+        SupplierPayment p = find(id);
+        if (!p.isDeleted()) {
+            throw new BusinessRuleException("PAYMENT_NOT_DELETED", "This payment is not deleted.");
+        }
+        if (supplierService.loadAny(p.getSupplierId()).isDeleted()) {
+            throw new BusinessRuleException("RESTORE_BLOCKED_SUPPLIER_DELETED",
+                    "This payment's supplier is deleted. Restore the supplier first.");
+        }
+        ledger.adjustCash(p.getAmount().negate());
+        p.setDeleted(false);
+        p.setDeletedAt(null);
+        return toResponse(p);
     }
 
     SupplierPayment find(Long id) {
