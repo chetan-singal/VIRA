@@ -51,6 +51,9 @@ public class Bill {
     @Column(name = "grand_total", nullable = false)
     private BigDecimal grandTotal;
 
+    @Column(name = "previous_balance")
+    private BigDecimal previousBalance;
+
     @Column(name = "is_edited", nullable = false)
     private boolean edited = false;
 
@@ -99,6 +102,9 @@ public class Bill {
 
     public BigDecimal getGrandTotal() { return grandTotal; }
     public void setGrandTotal(BigDecimal grandTotal) { this.grandTotal = grandTotal; }
+
+    public BigDecimal getPreviousBalance() { return previousBalance; }
+    public void setPreviousBalance(BigDecimal previousBalance) { this.previousBalance = previousBalance; }
 
     public boolean isEdited() { return edited; }
     public void setEdited(boolean edited) { this.edited = edited; }

@@ -144,6 +144,7 @@ CREATE TABLE bill (
     net_amount          DECIMAL(12,2) NOT NULL,
     round_off           DECIMAL(6,2)  NOT NULL DEFAULT 0,
     grand_total         DECIMAL(12,2) NOT NULL,
+    previous_balance    DECIMAL(12,2) NULL,
     is_edited           BOOLEAN       NOT NULL DEFAULT FALSE,
     last_edited_at      DATETIME      NULL,
     is_deleted          BOOLEAN       NOT NULL DEFAULT FALSE,

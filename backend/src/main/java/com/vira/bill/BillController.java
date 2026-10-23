@@ -14,6 +14,12 @@ public class BillController {
         this.billService = billService;
     }
 
+
+    @GetMapping("/{id}")
+    public BillResponse get(@PathVariable Long id) {
+        return billService.get(id);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BillResponse create(@Valid @RequestBody BillRequest request) {

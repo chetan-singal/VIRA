@@ -1,7 +1,10 @@
 package com.vira.bill;
 
+import com.vira.common.BusinessRuleException;
 import com.vira.common.FieldValidationException;
 import com.vira.common.Money;
+import com.vira.common.NotFoundException;
+import com.vira.common.RecordActions;
 import com.vira.item.Item;
 import com.vira.item.ItemRepository;
 import com.vira.ledger.LedgerService;
@@ -15,11 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
-
-import com.vira.common.BusinessRuleException;
-import com.vira.common.NotFoundException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class BillService {
@@ -37,6 +37,12 @@ public class BillService {
         this.partyService = partyService;
         this.ledger = ledger;
         this.numbers = numbers;
+    }
+
+    @Transactional(readOnly = true)
+    public BillResponse get(Long id) {
+        Bill bill = find(id);
+        return toResponse(bill, partyDeleted(bill));
     }
 
     @Transactional
@@ -61,21 +67,19 @@ public class BillService {
         bill.setRoundOff(roundOff);
         bill.setGrandTotal(grandTotal);
 
-                bill.setBillNo(String.valueOf(numbers.nextValue(NumberSequenceService.BILL)));
+        bill.setBillNo(String.valueOf(numbers.nextValue(NumberSequenceService.BILL)));
 
         Bill saved = bills.save(bill);
 
-        BigDecimal previousBalance = null;
-        BigDecimal totalDue = null;
         if (r.billType() == BillType.CASH) {
             ledger.adjustCash(grandTotal);
+            saved.setPreviousBalance(null);
         } else {
             BigDecimal updated = ledger.adjustPartyBalance(party.getId(), grandTotal);
-            previousBalance = updated.subtract(grandTotal);
-            totalDue = updated;
+            saved.setPreviousBalance(updated.subtract(grandTotal));
         }
 
-        return toResponse(saved, previousBalance, totalDue);
+        return toResponse(saved, false);
     }
 
     private BigDecimal priceLines(Bill bill, List<BillLineRequest> lineRequests) {
@@ -155,17 +159,15 @@ public class BillService {
 
         Bill saved = bills.save(bill);
 
-        BigDecimal previousBalance = null;
-        BigDecimal totalDue = null;
         if (r.billType() == BillType.CASH) {
             ledger.adjustCash(grandTotal);
+            saved.setPreviousBalance(null);
         } else {
             BigDecimal updated = ledger.adjustPartyBalance(newParty.getId(), grandTotal);
-            previousBalance = updated.subtract(grandTotal);
-            totalDue = updated;
+            saved.setPreviousBalance(updated.subtract(grandTotal));
         }
 
-        return toResponse(saved, previousBalance, totalDue);
+        return toResponse(saved, false);
     }
 
     @Transactional
@@ -198,22 +200,24 @@ public class BillService {
         }
 
         BigDecimal grandTotal = bill.getGrandTotal();
-        BigDecimal previousBalance = null;
-        BigDecimal totalDue = null;
         if (bill.getBillType() == BillType.CASH) {
             ledger.adjustCash(grandTotal);
         } else {
             BigDecimal updated = ledger.adjustPartyBalance(bill.getPartyId(), grandTotal);
-            previousBalance = updated.subtract(grandTotal);
-            totalDue = updated;
+            bill.setPreviousBalance(updated.subtract(grandTotal));
         }
         bill.setDeleted(false);
         bill.setDeletedAt(null);
-        return toResponse(bill, previousBalance, totalDue);
+        return toResponse(bill, false);
     }
 
     Bill find(Long id) {
         return bills.findById(id).orElseThrow(() -> new NotFoundException("Bill " + id + " not found"));
+    }
+
+    private boolean partyDeleted(Bill b) {
+        return b.getBillType() == BillType.PARTY && b.getPartyId() != null
+                && partyService.loadAny(b.getPartyId()).isDeleted();
     }
 
     private BigDecimal nearestRupeeRoundOff(BigDecimal netAmount) {
@@ -221,14 +225,18 @@ public class BillService {
         return nearestWhole.subtract(netAmount).setScale(Money.SCALE, Money.ROUNDING);
     }
 
-    private BillResponse toResponse(Bill b, BigDecimal previousBalance, BigDecimal totalDue) {
+    private BillResponse toResponse(Bill b, boolean partyDeleted) {
         List<BillLineResponse> lines = b.getItems().stream()
                 .map(i -> new BillLineResponse(i.getItemId(), i.getItemNameSnapshot(), i.getUnitSnapshot(),
                         i.getItemTypeSnapshot(), i.getMrpSnapshot(), i.getDiscountPercentSnapshot(),
                         i.getRateSnapshot(), i.getQty(), i.getAmount(), i.getLineNo()))
                 .toList();
+        BigDecimal previous = b.getPreviousBalance();
+        BigDecimal totalDue = previous == null ? null : Money.round(previous.add(b.getGrandTotal()));
         return new BillResponse(b.getId(), b.getBillNo(), b.getBillType(), b.getPartyId(),
                 b.getPartyNameSnapshot(), b.getBillDate(), lines,
-                b.getNetAmount(), b.getRoundOff(), b.getGrandTotal(), previousBalance, totalDue);
+                b.getNetAmount(), b.getRoundOff(), b.getGrandTotal(), previous, totalDue,
+                b.isEdited(), b.getLastEditedAt(), b.isDeleted(), b.getDeletedAt(),
+                RecordActions.of(b.isDeleted(), partyDeleted, "party"));
     }
 }
