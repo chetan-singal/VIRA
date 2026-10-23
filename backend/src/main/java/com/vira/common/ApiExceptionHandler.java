@@ -7,6 +7,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -37,6 +38,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiError> malformed(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest().body(
                 new ApiError("MALFORMED_REQUEST", "The request could not be read.", List.of()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> badParameter(MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.badRequest().body(
+                new ApiError("MALFORMED_REQUEST", "Invalid value for '" + e.getName() + "'.", List.of()));
     }
 
     @ExceptionHandler(NotFoundException.class)

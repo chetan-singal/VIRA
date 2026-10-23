@@ -1,3 +1,7 @@
 package com.vira.supplier;
 
-public record SupplierResponse(Long id, String name, String phone, String city) {}
+import java.time.LocalDateTime;
+
+public record SupplierResponse(Long id, String name, String phone, String city,
+                               boolean deleted, LocalDateTime deletedAt) {
+}

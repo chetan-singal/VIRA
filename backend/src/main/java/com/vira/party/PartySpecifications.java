@@ -9,6 +9,10 @@ public final class PartySpecifications {
         return (root, query, cb) -> cb.isFalse(root.get("deleted"));
     }
 
+    public static Specification<Party> deleted() {
+        return (root, query, cb) -> cb.isTrue(root.get("deleted"));
+    }
+
     public static Specification<Party> nameContains(String q) {
         return (root, query, cb) -> {
             if (q == null || q.isBlank()) return null;

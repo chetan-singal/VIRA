@@ -18,8 +18,10 @@ public class PartyController {
     }
 
     @GetMapping
-    public PageResponse<PartyResponse> list(@RequestParam(required = false) String q, Pageable pageable) {
-        return partyService.list(q, pageable);
+    public PageResponse<PartyResponse> list(@RequestParam(required = false) String q,
+                                            @RequestParam(defaultValue = "false") boolean deleted,
+                                            Pageable pageable) {
+        return partyService.list(q, deleted, pageable);
     }
 
     @GetMapping("/{id}")
@@ -43,5 +45,5 @@ public class PartyController {
     public PartyResponse restore(@PathVariable Long id) {
         partyService.restore(id);
         return partyService.get(id);
-}
+    }
 }

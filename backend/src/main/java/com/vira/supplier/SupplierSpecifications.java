@@ -9,6 +9,10 @@ public final class SupplierSpecifications {
         return (root, query, cb) -> cb.isFalse(root.get("deleted"));
     }
 
+    public static Specification<Supplier> deleted() {
+        return (root, query, cb) -> cb.isTrue(root.get("deleted"));
+    }
+
     public static Specification<Supplier> nameContains(String q) {
         return (root, query, cb) -> {
             if (q == null || q.isBlank()) return null;

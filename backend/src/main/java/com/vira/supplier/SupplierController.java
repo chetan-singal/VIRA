@@ -18,8 +18,10 @@ public class SupplierController {
     }
 
     @GetMapping
-    public PageResponse<SupplierResponse> list(@RequestParam(required = false) String q, Pageable pageable) {
-        return supplierService.list(q, pageable);
+    public PageResponse<SupplierResponse> list(@RequestParam(required = false) String q,
+                                               @RequestParam(defaultValue = "false") boolean deleted,
+                                               Pageable pageable) {
+        return supplierService.list(q, deleted, pageable);
     }
 
     @GetMapping("/{id}")
@@ -32,6 +34,7 @@ public class SupplierController {
     public SupplierResponse create(@Valid @RequestBody SupplierRequest request) {
         return supplierService.create(request);
     }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {

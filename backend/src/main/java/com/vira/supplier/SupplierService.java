@@ -1,5 +1,5 @@
 package com.vira.supplier;
-import java.time.LocalDateTime;
+
 import com.vira.common.BusinessRuleException;
 import com.vira.common.NotFoundException;
 import com.vira.common.PageResponse;
@@ -8,6 +8,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class SupplierService {
@@ -29,8 +35,14 @@ public class SupplierService {
 
     @Transactional(readOnly = true)
     public PageResponse<SupplierResponse> list(String q, Pageable pageable) {
+        return list(q, false, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<SupplierResponse> list(String q, boolean deletedOnly, Pageable pageable) {
         Specification<Supplier> spec = Specification.allOf(
-                SupplierSpecifications.notDeleted(), SupplierSpecifications.nameContains(q));
+                deletedOnly ? SupplierSpecifications.deleted() : SupplierSpecifications.notDeleted(),
+                SupplierSpecifications.nameContains(q));
         return PageResponse.of(suppliers.findAll(spec, pageable).map(this::toResponse));
     }
 
@@ -38,6 +50,7 @@ public class SupplierService {
     public SupplierResponse get(Long id) {
         return toResponse(find(id));
     }
+
     @Transactional(readOnly = true)
     public Supplier loadActive(Long id) {
         Supplier supplier = find(id);
@@ -47,13 +60,6 @@ public class SupplierService {
         return supplier;
     }
 
-    Supplier find(Long id) {
-        return suppliers.findById(id).orElseThrow(() -> new NotFoundException("Supplier " + id + " not found"));
-    }
-
-    private SupplierResponse toResponse(Supplier s) {
-        return new SupplierResponse(s.getId(), s.getName(), s.getPhone(), s.getCity());
-    }
     @Transactional
     public void delete(Long id) {
         Supplier supplier = find(id);
@@ -77,5 +83,23 @@ public class SupplierService {
     @Transactional(readOnly = true)
     public Supplier loadAny(Long id) {
         return find(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, Boolean> deletedFlags(Collection<Long> ids) {
+        Map<Long, Boolean> result = new HashMap<>();
+        for (Supplier s : suppliers.findAllById(ids.stream().filter(Objects::nonNull).toList())) {
+            result.put(s.getId(), s.isDeleted());
+        }
+        return result;
+    }
+
+    Supplier find(Long id) {
+        return suppliers.findById(id).orElseThrow(() -> new NotFoundException("Supplier " + id + " not found"));
+    }
+
+    private SupplierResponse toResponse(Supplier s) {
+        return new SupplierResponse(s.getId(), s.getName(), s.getPhone(), s.getCity(),
+                s.isDeleted(), s.getDeletedAt());
     }
 }

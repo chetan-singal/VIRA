@@ -1,0 +1,33 @@
+@base = http://127.0.0.1:8080/api
+
+### C1. Create a zero-balance party
+# @name p
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "P6 Step1 Party" }
+
+### C2. Delete it
+DELETE {{base}}/parties/{{p.response.body.id}}
+
+### C3. Active list: must NOT contain it
+GET {{base}}/parties
+
+### C4. Deleted list: must contain it, "deleted": true
+GET {{base}}/parties?deleted=true
+
+### C5. Bad parameter
+GET {{base}}/parties?deleted=maybe
+
+### C6. Same for suppliers
+# @name s
+POST {{base}}/suppliers
+Content-Type: application/json
+
+{ "name": "P6 Step1 Supplier" }
+
+###
+DELETE {{base}}/suppliers/{{s.response.body.id}}
+
+###
+GET {{base}}/suppliers?deleted=true

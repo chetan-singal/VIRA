@@ -1,5 +1,5 @@
 package com.vira.party;
-import java.time.LocalDateTime;
+
 import com.vira.common.BusinessRuleException;
 import com.vira.common.Money;
 import com.vira.common.NotFoundException;
@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class PartyService {
@@ -38,8 +43,14 @@ public class PartyService {
 
     @Transactional(readOnly = true)
     public PageResponse<PartyResponse> list(String q, Pageable pageable) {
+        return list(q, false, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PartyResponse> list(String q, boolean deletedOnly, Pageable pageable) {
         Specification<Party> spec = Specification.allOf(
-                PartySpecifications.notDeleted(), PartySpecifications.nameContains(q));
+                deletedOnly ? PartySpecifications.deleted() : PartySpecifications.notDeleted(),
+                PartySpecifications.nameContains(q));
         return PageResponse.of(parties.findAll(spec, pageable).map(this::toResponse));
     }
 
@@ -56,6 +67,7 @@ public class PartyService {
         }
         return party;
     }
+
     @Transactional
     public void delete(Long id) {
         Party party = find(id);
@@ -85,12 +97,23 @@ public class PartyService {
         return find(id);
     }
 
-        Party find(Long id) {
-            return parties.findById(id).orElseThrow(() -> new NotFoundException("Party " + id + " not found"));
+    /** Party id -> deleted flag, for a batch of ids. Null ids are ignored. */
+    @Transactional(readOnly = true)
+    public Map<Long, Boolean> deletedFlags(Collection<Long> ids) {
+        Map<Long, Boolean> result = new HashMap<>();
+        for (Party p : parties.findAllById(ids.stream().filter(Objects::nonNull).toList())) {
+            result.put(p.getId(), p.isDeleted());
         }
+        return result;
+    }
 
-        private PartyResponse toResponse(Party p) {
-            return new PartyResponse(p.getId(), p.getName(), p.getPhone(), p.getAddress(),
-                    p.getCity(), p.getState(), p.getRemarks(), p.getOpeningBalance(), p.getCurrentBalance());
-        }
+    Party find(Long id) {
+        return parties.findById(id).orElseThrow(() -> new NotFoundException("Party " + id + " not found"));
+    }
+
+    private PartyResponse toResponse(Party p) {
+        return new PartyResponse(p.getId(), p.getName(), p.getPhone(), p.getAddress(),
+                p.getCity(), p.getState(), p.getRemarks(), p.getOpeningBalance(), p.getCurrentBalance(),
+                p.isDeleted(), p.getDeletedAt());
+    }
 }
