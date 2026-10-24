@@ -1,5 +1,11 @@
 package com.vira.party;
 
+import com.vira.common.BusinessRuleException;
+import com.vira.common.PageResponse;
+import com.vira.voucher.PaymentMode;
+import com.vira.voucher.PaymentVoucherRequest;
+import com.vira.voucher.PaymentVoucherService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,29 +14,20 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-
-import com.vira.common.BusinessRuleException;
-import com.vira.voucher.PaymentMode;
-import com.vira.voucher.PaymentVoucherRequest;
-import com.vira.voucher.PaymentVoucherService;
-
 import java.time.LocalDate;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
 class PartyServiceTest {
 
-    @Autowired
-    private PartyService partyService;
-    @Autowired
-    private PartyRepository partyRepository;
+    @Autowired private PartyService partyService;
+    @Autowired private PartyRepository partyRepository;
+    @Autowired private PaymentVoucherService voucherService;
 
-    @Autowired
-    private PaymentVoucherService voucherService;
     @Test
     void createWithOpeningBalanceSeedsCurrentBalanceImmediately() {
         PartyResponse response = partyService.create(
@@ -59,6 +56,7 @@ class PartyServiceTest {
         assertThat(page.content()).hasSize(1);
         assertThat(page.content().get(0).name()).isEqualTo("Krishna Auto Parts");
     }
+
     @Test
     void deleteAtNonZeroBalanceFailsThenZeroedBalanceSucceeds() {
         PartyResponse party = partyService.create(
@@ -85,5 +83,17 @@ class PartyServiceTest {
         partyService.restore(party.id());
 
         assertThat(partyRepository.findById(party.id()).orElseThrow().isDeleted()).isFalse();
+    }
+
+    @Test
+    void deletedPartiesAppearOnlyInTheDeletedTab() {
+        PartyResponse party = partyService.create(
+                new PartyRequest("Tab Test Party", null, null, null, null, null, null));
+        partyService.delete(party.id());
+
+        assertThat(partyService.list("Tab Test", false, PageRequest.of(0, 10)).content()).isEmpty();
+        PageResponse<PartyResponse> deleted = partyService.list("Tab Test", true, PageRequest.of(0, 10));
+        assertThat(deleted.content()).hasSize(1);
+        assertThat(deleted.content().get(0).deleted()).isTrue();
     }
 }

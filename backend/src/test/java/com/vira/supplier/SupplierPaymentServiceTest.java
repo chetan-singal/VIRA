@@ -1,12 +1,14 @@
 package com.vira.supplier;
 
 import com.vira.common.BusinessRuleException;
+import com.vira.common.PageResponse;
 import com.vira.ledger.CashInHandRepository;
 import com.vira.voucher.PaymentMode;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -168,5 +170,23 @@ class SupplierPaymentServiceTest {
 
         supplierPaymentService.restore(toRestore.id());
         assertThat(cash().subtract(cashStart)).isEqualByComparingTo("-225.00");
+    }
+
+    @Test
+    void listFiltersBySupplierAndShowsDeletedOnRequest() {
+        SupplierResponse supplier = newSupplier("List Supplier");
+        SupplierPaymentResponse kept = supplierPaymentService.create(
+                request(supplier.id(), "50.00", PaymentMode.CASH));
+        SupplierPaymentResponse gone = supplierPaymentService.create(new SupplierPaymentRequest(
+                supplier.id(), LocalDate.now(), new BigDecimal("60.00"), PaymentMode.ONLINE, "UTR1", null));
+        supplierPaymentService.delete(gone.id());
+
+        PageRequest page = PageRequest.of(0, 10);
+        assertThat(supplierPaymentService.list(null, null, supplier.id(), null, false, page).content())
+                .extracting(SupplierPaymentResponse::id).containsExactly(kept.id());
+        PageResponse<SupplierPaymentResponse> all =
+                supplierPaymentService.list(null, null, supplier.id(), "utr1", true, page);
+        assertThat(all.content()).extracting(SupplierPaymentResponse::id).containsExactly(gone.id());
+        assertThat(all.content().get(0).actions().canRestore()).isTrue();
     }
 }
