@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 public interface BillRepository extends JpaRepository<Bill, Long>, JpaSpecificationExecutor<Bill> {
     boolean existsByBillTypeAndBillNo(BillType billType, String billNo);
@@ -16,4 +18,14 @@ public interface BillRepository extends JpaRepository<Bill, Long>, JpaSpecificat
     @Query("select sum(b.grandTotal) from Bill b " +
            "where b.partyId = :partyId and b.billType = com.vira.bill.BillType.PARTY and b.deleted = false")
     BigDecimal sumGrandTotalForPartyActive(@Param("partyId") Long partyId);
+
+    @Query("select sum(b.grandTotal) from Bill b "
+            + "where b.billType = :type and b.deleted = false and b.billDate between :from and :to")
+    BigDecimal sumGrandTotalActiveBetween(@Param("type") BillType type,
+                                          @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("select b.billDate, b.billType, sum(b.grandTotal) from Bill b "
+            + "where b.deleted = false and b.billDate between :from and :to "
+            + "group by b.billDate, b.billType")
+    List<Object[]> dailySalesActive(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }
