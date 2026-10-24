@@ -21,4 +21,11 @@ public final class ItemSpecifications {
     public static Specification<Item> inCategory(Long id) {
         return (root, query, cb) -> id == null ? null : cb.equal(root.get("partCategory").get("id"), id);
     }
+
+    public static Specification<Item> compatibleWithBike(Long bikeId) {
+        return (root, query, cb) -> {
+            if (bikeId == null) return null;
+            return cb.equal(root.join("bikes").get("id"), bikeId);
+        };
+    }
 }

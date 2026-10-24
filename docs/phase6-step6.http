@@ -1,0 +1,69 @@
+@base = http://127.0.0.1:8080/api
+
+### Send each request ONCE, top to bottom.
+
+### 6-S1. Category
+# @name cat
+POST {{base}}/part-categories
+Content-Type: application/json
+
+{ "name": "P6S6 Brakes" }
+
+### 6-S2. Bike A
+# @name bikeA
+POST {{base}}/bikes
+Content-Type: application/json
+
+{ "name": "P6S6 Splendor" }
+
+### 6-S3. Bike B
+# @name bikeB
+POST {{base}}/bikes
+Content-Type: application/json
+
+{ "name": "P6S6 Pulsar" }
+
+### 6-S4. Item on Bike A only, with category (MRP 500, 10% -> defaultRate 450.00)
+# @name itemA
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "P6S6 Brake Pad", "unit": "Pcs", "partCategoryId": {{cat.response.body.id}},
+  "bikeIds": [{{bikeA.response.body.id}}],
+  "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
+
+### 6-S5. Item on Bike B only, no category (net rate 650)
+# @name itemB
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "P6S6 Chain Kit", "unit": "Box",
+  "bikeIds": [{{bikeB.response.body.id}}],
+  "itemType": "NET_RATE", "defaultNetRate": 650.00 }
+
+### 6-1. Bike A -> only "P6S6 Brake Pad": partCategory "P6S6 Brakes", bikes ["P6S6 Splendor"], defaultRate 450.00, totalElements 1
+GET {{base}}/part-search?bikeId={{bikeA.response.body.id}}
+
+### 6-2. Bike B -> only "P6S6 Chain Kit": partCategory null, bikes ["P6S6 Pulsar"], defaultRate 650.00, totalElements 1
+GET {{base}}/part-search?bikeId={{bikeB.response.body.id}}
+
+### 6-3. Category -> only "P6S6 Brake Pad"
+GET {{base}}/part-search?categoryId={{cat.response.body.id}}
+
+### 6-4. Name, case-insensitive -> both P6S6 items, sorted by name (Brake Pad, then Chain Kit)
+GET {{base}}/part-search?q=p6s6
+
+### 6-5. Name + bike -> only "P6S6 Brake Pad"
+GET {{base}}/part-search?q=p6s6&bikeId={{bikeA.response.body.id}}
+
+### 6-6. Name matches Bike B's item but bike is A -> content [], totalElements 0
+GET {{base}}/part-search?q=chain&bikeId={{bikeA.response.body.id}}
+
+### 6-7. No filters -> every item, sorted by name
+GET {{base}}/part-search
+
+### 6-8. Unknown bike -> content [], totalElements 0 (200, not an error)
+GET {{base}}/part-search?bikeId=999999
+
+### 6-9. Bad parameter -> 400, code MALFORMED_REQUEST
+GET {{base}}/part-search?bikeId=abc
