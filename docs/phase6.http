@@ -243,3 +243,58 @@ Content-Type: application/json
   "printShowThankyou": true,
   "printShowMrp": true
 }
+
+
+
+
+
+
+@base = http://127.0.0.1:8080/api
+
+### Send each request ONCE, top to bottom.
+
+### 9-1. Defaults -> CASH, item_search, "", DD-MM-YYYY, light
+GET {{base}}/settings
+
+### 9-2. Update -> 200, echoes the new values
+PUT {{base}}/settings
+Content-Type: application/json
+
+{ "defaultBillType": "PARTY", "defaultFocusField": "party_search",
+  "defaultPrinter": "  Shop Printer  ", "dateFormat": "YYYY-MM-DD", "theme": "dark" }
+
+### 9-3. Read back -> defaultPrinter "Shop Printer" (trimmed), theme "dark"
+GET {{base}}/settings
+
+### 9-4. Bad theme -> 400 VALIDATION_FAILED, fieldErrors has "theme"
+PUT {{base}}/settings
+Content-Type: application/json
+
+{ "defaultBillType": "CASH", "defaultFocusField": "item_search",
+  "defaultPrinter": "", "dateFormat": "DD-MM-YYYY", "theme": "blue" }
+
+### 9-5. Several bad fields -> 400 VALIDATION_FAILED with 4 fieldErrors
+PUT {{base}}/settings
+Content-Type: application/json
+
+{ "defaultBillType": "BOTH", "defaultFocusField": "Item Search",
+  "defaultPrinter": "", "dateFormat": "31/12/2026", "theme": "red" }
+
+### 9-6. Missing field -> 400 VALIDATION_FAILED
+PUT {{base}}/settings
+Content-Type: application/json
+
+{ "defaultBillType": "CASH", "defaultPrinter": "", "dateFormat": "DD-MM-YYYY", "theme": "light" }
+
+### 9-7. After 9-4 to 9-6, values must be unchanged from 9-2 (theme still "dark")
+GET {{base}}/settings
+
+### 9-8. RESTART THE APP, then send this -> same values as 9-2 (persisted)
+GET {{base}}/settings
+
+### 9-9. Put the defaults back
+PUT {{base}}/settings
+Content-Type: application/json
+
+{ "defaultBillType": "CASH", "defaultFocusField": "item_search",
+  "defaultPrinter": "", "dateFormat": "DD-MM-YYYY", "theme": "light" }
