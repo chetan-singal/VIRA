@@ -3,15 +3,22 @@ package com.vira.voucher;
 import com.vira.common.BusinessRuleException;
 import com.vira.common.Money;
 import com.vira.common.NotFoundException;
+import com.vira.common.PageResponse;
+import com.vira.common.RecordActions;
 import com.vira.ledger.LedgerService;
 import com.vira.ledger.NumberSequenceService;
 import com.vira.party.Party;
 import com.vira.party.PartyService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentVoucherService {
@@ -111,13 +118,35 @@ public class PaymentVoucherService {
         return toResponse(v);
     }
 
+    @Transactional(readOnly = true)
+    public PaymentVoucherResponse get(Long id) {
+        PaymentVoucher v = find(id);
+        return toResponse(v, partyService.loadAny(v.getPartyId()).isDeleted());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PaymentVoucherResponse> list(LocalDate from, LocalDate to, Long partyId,
+                                                     String keyword, boolean includeDeleted,
+                                                     Pageable pageable) {
+        Page<PaymentVoucher> page = vouchers.findAll(
+                PaymentVoucherSpecifications.of(from, to, partyId, keyword, includeDeleted), pageable);
+        Map<Long, Boolean> deleted = partyService.deletedFlags(
+                page.getContent().stream().map(PaymentVoucher::getPartyId).collect(Collectors.toSet()));
+        return PageResponse.of(page.map(v -> toResponse(v, deleted.getOrDefault(v.getPartyId(), false))));
+    }
+
     PaymentVoucher find(Long id) {
         return vouchers.findById(id).orElseThrow(() -> new NotFoundException("Payment Voucher " + id + " not found"));
     }
 
     private PaymentVoucherResponse toResponse(PaymentVoucher v) {
+        return toResponse(v, false);
+    }
+
+    private PaymentVoucherResponse toResponse(PaymentVoucher v, boolean partyDeleted) {
         return new PaymentVoucherResponse(v.getId(), v.getVoucherNo(), v.getPartyId(), v.getPartyNameSnapshot(),
                 v.getPaymentDate(), v.getAmount(), v.getPaymentMode(), v.getReferenceNo(), v.getRemarks(),
-                v.isEdited(), v.getLastEditedAt(), v.isDeleted(), v.getDeletedAt());
+                v.isEdited(), v.getLastEditedAt(), v.isDeleted(), v.getDeletedAt(),
+                RecordActions.of(v.isDeleted(), partyDeleted, "party"));
     }
 }

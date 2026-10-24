@@ -3,13 +3,20 @@ package com.vira.supplier;
 import com.vira.common.BusinessRuleException;
 import com.vira.common.Money;
 import com.vira.common.NotFoundException;
+import com.vira.common.PageResponse;
+import com.vira.common.RecordActions;
 import com.vira.ledger.LedgerService;
 import com.vira.ledger.NumberSequenceService;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class SupplierPaymentService {
@@ -104,13 +111,35 @@ public class SupplierPaymentService {
         return toResponse(p);
     }
 
+    @Transactional(readOnly = true)
+    public SupplierPaymentResponse get(Long id) {
+        SupplierPayment p = find(id);
+        return toResponse(p, supplierService.loadAny(p.getSupplierId()).isDeleted());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<SupplierPaymentResponse> list(LocalDate from, LocalDate to, Long supplierId,
+                                                      String keyword, boolean includeDeleted,
+                                                      Pageable pageable) {
+        Page<SupplierPayment> page = payments.findAll(
+                SupplierPaymentSpecifications.of(from, to, supplierId, keyword, includeDeleted), pageable);
+        Map<Long, Boolean> deleted = supplierService.deletedFlags(
+                page.getContent().stream().map(SupplierPayment::getSupplierId).collect(Collectors.toSet()));
+        return PageResponse.of(page.map(p -> toResponse(p, deleted.getOrDefault(p.getSupplierId(), false))));
+    }
+
     SupplierPayment find(Long id) {
         return payments.findById(id).orElseThrow(() -> new NotFoundException("Supplier Payment " + id + " not found"));
     }
 
     private SupplierPaymentResponse toResponse(SupplierPayment p) {
+        return toResponse(p, false);
+    }
+
+    private SupplierPaymentResponse toResponse(SupplierPayment p, boolean supplierDeleted) {
         return new SupplierPaymentResponse(p.getId(), p.getPaymentNo(), p.getSupplierId(), p.getSupplierNameSnapshot(),
                 p.getPaymentDate(), p.getAmount(), p.getPaymentMode(), p.getReferenceNo(), p.getRemarks(),
-                p.isEdited(), p.getLastEditedAt(), p.isDeleted(), p.getDeletedAt());
+                p.isEdited(), p.getLastEditedAt(), p.isDeleted(), p.getDeletedAt(),
+                RecordActions.of(p.isDeleted(), supplierDeleted, "supplier"));
     }
 }
