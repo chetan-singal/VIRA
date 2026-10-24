@@ -1,12 +1,13 @@
 package com.vira.bill;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 
-public interface BillRepository extends JpaRepository<Bill, Long> {
+public interface BillRepository extends JpaRepository<Bill, Long>, JpaSpecificationExecutor<Bill> {
     boolean existsByBillTypeAndBillNo(BillType billType, String billNo);
 
     @Query("select sum(b.grandTotal) from Bill b where b.billType = :type and b.deleted = false")
