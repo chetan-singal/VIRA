@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface PartyItemRateRepository extends JpaRepository<PartyItemRate, Long> {
     Optional<PartyItemRate> findByPartyIdAndItemId(Long partyId, Long itemId);
     List<PartyItemRate> findByItemId(Long itemId);
+    List<PartyItemRate> findByPartyId(Long partyId);
     boolean existsByItemId(Long itemId);
 
     @Modifying(clearAutomatically = true)

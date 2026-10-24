@@ -1,0 +1,81 @@
+@base = http://127.0.0.1:8080/api
+
+### Send each request ONCE, top to bottom.
+
+### 5-S1. MRP item (MRP 1000, default 10%)
+# @name itemMrp
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "P6S5 MRP Item", "unit": "Pcs", "bikeIds": [],
+  "itemType": "MRP", "mrp": 1000.00, "defaultDiscountPercent": 10.00 }
+
+### 5-S2. Net-rate item (default 300)
+# @name itemNet
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "P6S5 Net Item", "unit": "Pcs", "bikeIds": [],
+  "itemType": "NET_RATE", "defaultNetRate": 300.00 }
+
+### 5-S3. Party (opening 200)
+# @name party
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "P6S5 Party", "openingBalance": 200.00 }
+
+### 5-1. Item rates BEFORE any override -> empty list []
+GET {{base}}/parties/{{party.response.body.id}}/item-rates
+
+### 5-2. Party discount 25% on the MRP item -> source PARTY_OVERRIDE, rate 750.00
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": {{itemMrp.response.body.id}}, "customer": "PARTY", "partyId": {{party.response.body.id}},
+  "field": "DISCOUNT_PERCENT", "newValue": 25.00 }
+
+### 5-3. Party net rate 280 on the net-rate item -> rate 280.00
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": {{itemNet.response.body.id}}, "customer": "PARTY", "partyId": {{party.response.body.id}},
+  "field": "NET_RATE", "newValue": 280.00 }
+
+### 5-4. Item rates -> 2 rows, sorted by name:
+###   "P6S5 MRP Item": itemType MRP, mrp 1000.00, discountPercent 25.00, netRate null, rate 750.00
+###   "P6S5 Net Item": itemType NET_RATE, mrp null, discountPercent null, netRate 280.00, rate 280.00
+GET {{base}}/parties/{{party.response.body.id}}/item-rates
+
+### 5-5. Party Bill, qty 1 of the MRP item at 750 -> grandTotal 750.00
+# @name bill
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{party.response.body.id}}, "billDate": "2026-10-24",
+  "lines": [ { "itemId": {{itemMrp.response.body.id}}, "qty": 1, "mrp": 1000.00, "discountPercent": 25.00 } ] }
+
+### 5-6. Voucher 100 CASH
+POST {{base}}/payment-vouchers
+Content-Type: application/json
+
+{ "partyId": {{party.response.body.id}}, "paymentDate": "2026-10-24",
+  "amount": 100.00, "paymentMode": "CASH" }
+
+### 5-7. Balance summary -> openingBalance 200.00, totalBilled 750.00, totalPaid 100.00, currentBalance 850.00
+GET {{base}}/parties/{{party.response.body.id}}/balance-summary
+
+### 5-8. Delete the bill -> 204
+DELETE {{base}}/bills/{{bill.response.body.id}}
+
+### 5-9. Balance summary -> totalBilled 0.00, totalPaid 100.00, currentBalance 100.00
+GET {{base}}/parties/{{party.response.body.id}}/balance-summary
+
+### 5-10. Restore the bill -> 200
+POST {{base}}/bills/{{bill.response.body.id}}/restore
+
+### 5-11. Unknown party -> 404 on both
+GET {{base}}/parties/9999/item-rates
+
+###
+GET {{base}}/parties/9999/balance-summary

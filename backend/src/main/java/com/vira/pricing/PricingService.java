@@ -11,7 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PricingService {
@@ -48,6 +52,28 @@ public class PricingService {
                 : cashRates.findByItemId(itemId).map(CashItemRate::getNetRate);
         return new PriceQuote(itemId, ItemType.NET_RATE, null, null,
                 override.orElse(item.getDefaultNetRate()), source(override.isPresent(), customer));
+    }
+
+    /** Party-specific saved rates, with the resulting rate worked out (SRS §9.5). */
+    @Transactional(readOnly = true)
+    public List<PartyItemRateRow> listPartyRates(Long partyId) {
+        List<PartyItemRate> overrides = partyRates.findByPartyId(partyId);
+        Map<Long, Item> byId = items.findAllById(overrides.stream().map(PartyItemRate::getItemId).toList())
+                .stream().collect(Collectors.toMap(Item::getId, i -> i));
+        return overrides.stream()
+                .filter(o -> byId.containsKey(o.getItemId()))
+                .map(o -> {
+                    Item item = byId.get(o.getItemId());
+                    if (item.getItemType() == ItemType.MRP) {
+                        BigDecimal rate = PricingCalculator.mrpRate(item.getMrp(), o.getDiscountPercent());
+                        return new PartyItemRateRow(item.getId(), item.getName(), item.getUnit(), ItemType.MRP,
+                                item.getMrp(), o.getDiscountPercent(), null, rate, o.getUpdatedAt());
+                    }
+                    return new PartyItemRateRow(item.getId(), item.getName(), item.getUnit(), ItemType.NET_RATE,
+                            null, null, o.getNetRate(), o.getNetRate(), o.getUpdatedAt());
+                })
+                .sorted(Comparator.comparing(PartyItemRateRow::itemName, String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
     @Transactional

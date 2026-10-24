@@ -31,3 +31,78 @@ DELETE {{base}}/suppliers/{{s.response.body.id}}
 
 ###
 GET {{base}}/suppliers?deleted=true
+
+
+
+
+
+
+### D1. Party for voucher checks
+# @name vp
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "P6 Step4 Party" }
+
+### D2. Voucher
+# @name v1
+POST {{base}}/payment-vouchers
+Content-Type: application/json
+
+{ "partyId": {{vp.response.body.id}}, "paymentDate": "2026-10-24", "amount": 100.00, "paymentMode": "CASH", "referenceNo": "R-1", "remarks": "step4" }
+
+### D3. Get one -> actions.canEdit true
+GET {{base}}/payment-vouchers/{{v1.response.body.id}}
+
+### D4. List by party
+GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}
+
+### D5. Keyword (voucher no, party name or reference)
+GET {{base}}/payment-vouchers?keyword=R-1
+
+### D6. Delete the voucher
+DELETE {{base}}/payment-vouchers/{{v1.response.body.id}}
+
+### D7. Without deleted -> empty
+GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}
+
+### D8. With deleted -> deleted: true, actions.canRestore: true
+GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}&includeDeleted=true
+
+### D9. Delete the party (balance is zero again)
+DELETE {{base}}/parties/{{vp.response.body.id}}
+
+### D10. Same call -> canRestore: false with a blockedReason
+GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}&includeDeleted=true
+
+### D11. Supplier for payment checks
+# @name sp
+POST {{base}}/suppliers
+Content-Type: application/json
+
+{ "name": "P6 Step4 Supplier" }
+
+### D12. Supplier payment
+# @name sp1
+POST {{base}}/supplier-payments
+Content-Type: application/json
+
+{ "supplierId": {{sp.response.body.id}}, "paymentDate": "2026-10-24", "amount": 50.00, "paymentMode": "ONLINE", "referenceNo": "S-1", "remarks": "step4" }
+
+### D13. Get one
+GET {{base}}/supplier-payments/{{sp1.response.body.id}}
+
+### D14. Supplier's payment history
+GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}
+
+### D15. Delete the payment, then list with deleted
+DELETE {{base}}/supplier-payments/{{sp1.response.body.id}}
+
+### D16. With deleted -> canRestore: true
+GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}&includeDeleted=true
+
+### D17. Delete the supplier
+DELETE {{base}}/suppliers/{{sp.response.body.id}}
+
+### D18. Same call -> canRestore: false with a blockedReason
+GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}&includeDeleted=true
