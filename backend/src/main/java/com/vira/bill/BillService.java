@@ -9,6 +9,7 @@ import com.vira.item.Item;
 import com.vira.item.ItemRepository;
 import com.vira.ledger.LedgerService;
 import com.vira.ledger.NumberSequenceService;
+import com.vira.shop.DocumentNumberService;
 import com.vira.party.Party;
 import com.vira.party.PartyService;
 import com.vira.pricing.LinePrice;
@@ -28,15 +29,15 @@ public class BillService {
     private final ItemRepository items;
     private final PartyService partyService;
     private final LedgerService ledger;
-    private final NumberSequenceService numbers;
+    private final DocumentNumberService documentNumbers;
 
     public BillService(BillRepository bills, ItemRepository items, PartyService partyService,
-                        LedgerService ledger, NumberSequenceService numbers) {
+                        LedgerService ledger, DocumentNumberService documentNumbers) {
         this.bills = bills;
         this.items = items;
         this.partyService = partyService;
         this.ledger = ledger;
-        this.numbers = numbers;
+        this.documentNumbers = documentNumbers;
     }
 
     @Transactional(readOnly = true)
@@ -67,8 +68,8 @@ public class BillService {
         bill.setRoundOff(roundOff);
         bill.setGrandTotal(grandTotal);
 
-        bill.setBillNo(String.valueOf(numbers.nextValue(NumberSequenceService.BILL)));
-
+        bill.setBillNo(r.billType() == BillType.CASH
+                ? documentNumbers.nextCashBillNo() : documentNumbers.nextPartyBillNo());
         Bill saved = bills.save(bill);
 
         if (r.billType() == BillType.CASH) {

@@ -17,6 +17,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.vira.shop.ShopProfile;
+import com.vira.shop.ShopProfileRepository;
 @Service
 public class RecalculateBalancesService {
 
@@ -26,16 +28,19 @@ public class RecalculateBalancesService {
     private final PaymentVoucherRepository vouchers;
     private final SupplierPaymentRepository supplierPayments;
     private final LedgerService ledger;
-
+    private final ShopProfileRepository profiles;
+    
     public RecalculateBalancesService(CashInHandRepository cashInHand, PartyRepository parties,
             BillRepository bills, PaymentVoucherRepository vouchers,
-            SupplierPaymentRepository supplierPayments, LedgerService ledger) {
+            SupplierPaymentRepository supplierPayments, LedgerService ledger,
+            ShopProfileRepository profiles) {
         this.cashInHand = cashInHand;
         this.parties = parties;
         this.bills = bills;
         this.vouchers = vouchers;
         this.supplierPayments = supplierPayments;
         this.ledger = ledger;
+        this.profiles = profiles;
     }
 
     @Transactional(readOnly = true)
@@ -77,7 +82,9 @@ public class RecalculateBalancesService {
 
     // opening cash is zero until ShopProfile exists (Phase 6/8) — revisit then
     private BigDecimal expectedCash() {
-        BigDecimal openingCash = BigDecimal.ZERO;
+        BigDecimal openingCash = profiles.findById(1L)
+                .map(ShopProfile::getOpeningCashInHand)
+                .orElse(BigDecimal.ZERO);
         return openingCash
                 .add(nz(bills.sumGrandTotalByTypeActive(BillType.CASH)))
                 .add(nz(vouchers.sumAllActive()))

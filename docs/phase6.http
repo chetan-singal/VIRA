@@ -106,3 +106,140 @@ DELETE {{base}}/suppliers/{{sp.response.body.id}}
 
 ### D18. Same call -> canRestore: false with a blockedReason
 GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}&includeDeleted=true
+
+
+
+
+
+
+### E1. Before setup -> setupComplete: false
+GET {{base}}/setup/status
+
+### E2. First-run setup -> 201
+POST {{base}}/setup
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "address": "Test Address",
+  "phone": "9999999999",
+  "cashBillPrefix": "C-",
+  "partyBillPrefix": "P-",
+  "voucherPrefix": "V-",
+  "supplierPaymentPrefix": "S-",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00,
+  "openingCashInHandDate": "2026-10-24",
+  "printShowShopName": true,
+  "printShowAddress": true,
+  "printShowPhone": true,
+  "printShowLogo": true,
+  "printShowThankyou": true,
+  "printShowMrp": true
+}
+
+### E3. Profile -> setupValuesLocked: false
+GET {{base}}/shop-profile
+
+### E3 check (MySQL): USE vira_step8; SELECT balance FROM cash_in_hand;  -> 5000.00
+
+### E4. Item
+# @name e4
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "E Brake Pad", "unit": "Pcs", "bikeIds": [],
+  "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
+
+### E5. Cash Bill -> billNo "C-1001"
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "CASH", "billDate": "2026-10-24",
+  "lines": [ { "itemId": {{e4.response.body.id}}, "qty": 2, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### E6. Party
+# @name e6
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "E Step8 Party" }
+
+### E7. Party Bill -> billNo "P-1002"
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{e6.response.body.id}}, "billDate": "2026-10-24",
+  "lines": [ { "itemId": {{e4.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### E8. Voucher -> voucherNo "V-1"
+POST {{base}}/payment-vouchers
+Content-Type: application/json
+
+{ "partyId": {{e6.response.body.id}}, "paymentDate": "2026-10-24", "amount": 100.00, "paymentMode": "CASH" }
+
+### E9. Recalculate preview -> storedCash equals expectedCash (6000.00), no party mismatches
+GET {{base}}/maintenance/recalculate-balances
+
+### E10. Change starting number -> 409 SETUP_VALUES_LOCKED
+PUT {{base}}/shop-profile
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "address": "Test Address",
+  "phone": "9999999999",
+  "cashBillPrefix": "C-",
+  "partyBillPrefix": "P-",
+  "voucherPrefix": "V-",
+  "supplierPaymentPrefix": "S-",
+  "startingBillNumber": 2000,
+  "openingCashInHand": 5000.00,
+  "openingCashInHandDate": "2026-10-24",
+  "printShowShopName": true,
+  "printShowAddress": true,
+  "printShowPhone": true,
+  "printShowLogo": true,
+  "printShowThankyou": true,
+  "printShowMrp": true
+}
+
+### E11. Change only a prefix -> 200, cashBillPrefix "CB-"
+PUT {{base}}/shop-profile
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "address": "Test Address",
+  "phone": "9999999999",
+  "cashBillPrefix": "CB-",
+  "partyBillPrefix": "P-",
+  "voucherPrefix": "V-",
+  "supplierPaymentPrefix": "S-",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00,
+  "openingCashInHandDate": "2026-10-24",
+  "printShowShopName": true,
+  "printShowAddress": true,
+  "printShowPhone": true,
+  "printShowLogo": true,
+  "printShowThankyou": true,
+  "printShowMrp": true
+}
+
+### E12. Setup again -> 409 SETUP_ALREADY_DONE
+POST {{base}}/setup
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00,
+  "openingCashInHandDate": "2026-10-24",
+  "printShowShopName": true,
+  "printShowAddress": true,
+  "printShowPhone": true,
+  "printShowLogo": true,
+  "printShowThankyou": true,
+  "printShowMrp": true
+}

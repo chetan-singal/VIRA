@@ -7,6 +7,7 @@ import com.vira.common.PageResponse;
 import com.vira.common.RecordActions;
 import com.vira.ledger.LedgerService;
 import com.vira.ledger.NumberSequenceService;
+import com.vira.shop.DocumentNumberService;
 import com.vira.party.Party;
 import com.vira.party.PartyService;
 
@@ -26,14 +27,13 @@ public class PaymentVoucherService {
     private final PaymentVoucherRepository vouchers;
     private final PartyService partyService;
     private final LedgerService ledger;
-    private final NumberSequenceService numbers;
-
-    public PaymentVoucherService(PaymentVoucherRepository vouchers, PartyService partyService,
-                                  LedgerService ledger, NumberSequenceService numbers) {
+    private final DocumentNumberService documentNumbers;
+        public PaymentVoucherService(PaymentVoucherRepository vouchers, PartyService partyService,
+                                  LedgerService ledger, DocumentNumberService documentNumbers) {
         this.vouchers = vouchers;
         this.partyService = partyService;
         this.ledger = ledger;
-        this.numbers = numbers;
+        this.documentNumbers = documentNumbers;
     }
 
     @Transactional
@@ -48,7 +48,7 @@ public class PaymentVoucherService {
         v.setPaymentMode(r.paymentMode());
         v.setReferenceNo(r.referenceNo());
         v.setRemarks(r.remarks());
-        v.setVoucherNo(String.valueOf(numbers.nextValue(NumberSequenceService.VOUCHER)));
+        v.setVoucherNo(documentNumbers.nextVoucherNo());
 
         PaymentVoucher saved = vouchers.save(v);
 

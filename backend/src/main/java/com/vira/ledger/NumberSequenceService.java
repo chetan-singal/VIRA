@@ -26,4 +26,12 @@ public class NumberSequenceService {
         seq.setNextValue(issued + 1);
         return issued; // D3 — issue, then increment
     }
+
+    /** First-run setup only: sets the next number to issue (D8). */
+    @Transactional
+    public void seed(String sequenceName, int nextValue) {
+        NumberSequence seq = repo.lockForUpdate(sequenceName)
+                .orElseThrow(() -> new NotFoundException("Unknown sequence: " + sequenceName));
+        seq.setNextValue(nextValue);
+    }
 }

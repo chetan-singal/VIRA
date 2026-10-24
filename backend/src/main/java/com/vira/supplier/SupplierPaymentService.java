@@ -7,6 +7,7 @@ import com.vira.common.PageResponse;
 import com.vira.common.RecordActions;
 import com.vira.ledger.LedgerService;
 import com.vira.ledger.NumberSequenceService;
+import com.vira.shop.DocumentNumberService;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,14 +25,14 @@ public class SupplierPaymentService {
     private final SupplierPaymentRepository payments;
     private final SupplierService supplierService;
     private final LedgerService ledger;
-    private final NumberSequenceService numbers;
+    private final DocumentNumberService documentNumbers;
 
     public SupplierPaymentService(SupplierPaymentRepository payments, SupplierService supplierService,
-                                   LedgerService ledger, NumberSequenceService numbers) {
+                                   LedgerService ledger, DocumentNumberService documentNumbers) {
         this.payments = payments;
         this.supplierService = supplierService;
         this.ledger = ledger;
-        this.numbers = numbers;
+        this.documentNumbers = documentNumbers;
     }
 
     @Transactional
@@ -46,7 +47,7 @@ public class SupplierPaymentService {
         p.setPaymentMode(r.paymentMode());
         p.setReferenceNo(r.referenceNo());
         p.setRemarks(r.remarks());
-        p.setPaymentNo(String.valueOf(numbers.nextValue(NumberSequenceService.SUPPLIER_PAYMENT)));
+        p.setPaymentNo(documentNumbers.nextSupplierPaymentNo());
 
         SupplierPayment saved = payments.save(p);
 
