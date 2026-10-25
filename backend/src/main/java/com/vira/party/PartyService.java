@@ -59,6 +59,20 @@ public class PartyService {
         return toResponse(find(id));
     }
 
+    @Transactional
+    public PartyResponse update(Long id, PartyUpdateRequest r) {
+        Party party = find(id);
+        if (party.isDeleted()) {
+            throw new BusinessRuleException("PARTY_DELETED", "This party is deleted. Restore it first.");
+        }
+        party.setName(r.name().trim());
+        party.setPhone(r.phone());
+        party.setAddress(r.address());
+        party.setCity(r.city());
+        party.setState(r.state());
+        party.setRemarks(r.remarks());
+        return toResponse(party);
+    }
     @Transactional(readOnly = true)
     public Party loadActive(Long id) {
         Party party = find(id);

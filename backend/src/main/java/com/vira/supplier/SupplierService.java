@@ -51,6 +51,18 @@ public class SupplierService {
         return toResponse(find(id));
     }
 
+    @Transactional
+    public SupplierResponse update(Long id, SupplierUpdateRequest r) {
+        Supplier supplier = find(id);
+        if (supplier.isDeleted()) {
+            throw new BusinessRuleException("SUPPLIER_DELETED", "This supplier is deleted. Restore it first.");
+        }
+        supplier.setName(r.name().trim());
+        supplier.setPhone(r.phone());
+        supplier.setCity(r.city());
+        return toResponse(supplier);
+    }
+
     @Transactional(readOnly = true)
     public Supplier loadActive(Long id) {
         Supplier supplier = find(id);

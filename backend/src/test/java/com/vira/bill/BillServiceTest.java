@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-
+import com.vira.party.PartyUpdateRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -232,5 +232,18 @@ class BillServiceTest {
 
         partyService.restore(party.id());
         assertThat(billService.get(bill.id()).actions().canEdit()).isTrue();
+    }
+
+    @Test
+    void renamingAPartyDoesNotRewriteItsBills() {
+        ItemResponse item = createMrpItem();
+        PartyResponse party = partyService.create(
+                new PartyRequest("Old Name", null, null, null, null, null, null));
+        BillResponse bill = billService.create(partyRequest(party.id(), item.id(), 1));
+
+        partyService.update(party.id(), new PartyUpdateRequest("New Name", null, null, null, null, null));
+
+        assertThat(partyService.get(party.id()).name()).isEqualTo("New Name");
+        assertThat(billService.get(bill.id()).partyName()).isEqualTo("Old Name");
     }
 }

@@ -140,3 +140,63 @@ Content-Type: application/json
 
 ###
 GET {{base}}/maintenance/recalculate-balances
+
+
+
+
+
+
+
+
+### F12-1. Party
+# @name f1
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "F12 Old Name", "city": "Ludhiana" }
+
+### F12-2. Item
+# @name f2
+POST {{base}}/items
+Content-Type: application/json
+
+{ "name": "F12 Item", "unit": "Pcs", "bikeIds": [],
+  "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
+
+### F12-3. Party Bill
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{f1.response.body.id}}, "billDate": "2026-10-25",
+  "lines": [ { "itemId": {{f2.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### F12-4. Rename the party -> 200, name "F12 New Name", balance unchanged
+PUT {{base}}/parties/{{f1.response.body.id}}
+Content-Type: application/json
+
+{ "name": "F12 New Name", "city": "Ludhiana" }
+
+### F12-5. Daybook -> the bill still shows the old name "F12 Old Name"
+GET {{base}}/daybook?partyId={{f1.response.body.id}}
+
+### F12-6. Supplier
+# @name f6
+POST {{base}}/suppliers
+Content-Type: application/json
+
+{ "name": "F12 Old Supplier", "city": "Ludhiana" }
+
+### F12-7. Rename the supplier -> 200, name "F12 New Supplier"
+PUT {{base}}/suppliers/{{f6.response.body.id}}
+Content-Type: application/json
+
+{ "name": "F12 New Supplier", "city": "Ludhiana" }
+
+### F12-8. Delete the supplier, then edit it -> 409 SUPPLIER_DELETED
+DELETE {{base}}/suppliers/{{f6.response.body.id}}
+
+### F12-9. Edit the deleted supplier
+PUT {{base}}/suppliers/{{f6.response.body.id}}
+Content-Type: application/json
+
+{ "name": "F12 Blocked", "city": "Ludhiana" }

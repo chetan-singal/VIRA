@@ -35,6 +35,11 @@ public class PartyController {
         return partyService.create(request);
     }
 
+    @PutMapping("/{id}")
+    public PartyResponse update(@PathVariable Long id, @Valid @RequestBody PartyUpdateRequest request) {
+        return partyService.update(id, request);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
