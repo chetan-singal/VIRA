@@ -1,300 +1,142 @@
 @base = http://127.0.0.1:8080/api
 
-### C1. Create a zero-balance party
-# @name p
-POST {{base}}/parties
-Content-Type: application/json
-
-{ "name": "P6 Step1 Party" }
-
-### C2. Delete it
-DELETE {{base}}/parties/{{p.response.body.id}}
-
-### C3. Active list: must NOT contain it
-GET {{base}}/parties
-
-### C4. Deleted list: must contain it, "deleted": true
-GET {{base}}/parties?deleted=true
-
-### C5. Bad parameter
-GET {{base}}/parties?deleted=maybe
-
-### C6. Same for suppliers
-# @name s
-POST {{base}}/suppliers
-Content-Type: application/json
-
-{ "name": "P6 Step1 Supplier" }
-
-###
-DELETE {{base}}/suppliers/{{s.response.body.id}}
-
-###
-GET {{base}}/suppliers?deleted=true
-
-
-
-
-
-
-### D1. Party for voucher checks
-# @name vp
-POST {{base}}/parties
-Content-Type: application/json
-
-{ "name": "P6 Step4 Party" }
-
-### D2. Voucher
-# @name v1
-POST {{base}}/payment-vouchers
-Content-Type: application/json
-
-{ "partyId": {{vp.response.body.id}}, "paymentDate": "2026-10-24", "amount": 100.00, "paymentMode": "CASH", "referenceNo": "R-1", "remarks": "step4" }
-
-### D3. Get one -> actions.canEdit true
-GET {{base}}/payment-vouchers/{{v1.response.body.id}}
-
-### D4. List by party
-GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}
-
-### D5. Keyword (voucher no, party name or reference)
-GET {{base}}/payment-vouchers?keyword=R-1
-
-### D6. Delete the voucher
-DELETE {{base}}/payment-vouchers/{{v1.response.body.id}}
-
-### D7. Without deleted -> empty
-GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}
-
-### D8. With deleted -> deleted: true, actions.canRestore: true
-GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}&includeDeleted=true
-
-### D9. Delete the party (balance is zero again)
-DELETE {{base}}/parties/{{vp.response.body.id}}
-
-### D10. Same call -> canRestore: false with a blockedReason
-GET {{base}}/payment-vouchers?partyId={{vp.response.body.id}}&includeDeleted=true
-
-### D11. Supplier for payment checks
-# @name sp
-POST {{base}}/suppliers
-Content-Type: application/json
-
-{ "name": "P6 Step4 Supplier" }
-
-### D12. Supplier payment
-# @name sp1
-POST {{base}}/supplier-payments
-Content-Type: application/json
-
-{ "supplierId": {{sp.response.body.id}}, "paymentDate": "2026-10-24", "amount": 50.00, "paymentMode": "ONLINE", "referenceNo": "S-1", "remarks": "step4" }
-
-### D13. Get one
-GET {{base}}/supplier-payments/{{sp1.response.body.id}}
-
-### D14. Supplier's payment history
-GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}
-
-### D15. Delete the payment, then list with deleted
-DELETE {{base}}/supplier-payments/{{sp1.response.body.id}}
-
-### D16. With deleted -> canRestore: true
-GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}&includeDeleted=true
-
-### D17. Delete the supplier
-DELETE {{base}}/suppliers/{{sp.response.body.id}}
-
-### D18. Same call -> canRestore: false with a blockedReason
-GET {{base}}/supplier-payments?supplierId={{sp.response.body.id}}&includeDeleted=true
-
-
-
-
-
-
-### E1. Before setup -> setupComplete: false
+### 0. Setup status (not complete on a fresh database)
 GET {{base}}/setup/status
 
-### E2. First-run setup -> 201
+### 1. First-run setup (only on a database with no bills, vouchers or supplier payments)
 POST {{base}}/setup
 Content-Type: application/json
 
 {
   "shopName": "Chirag Auto Parts",
-  "address": "Test Address",
-  "phone": "9999999999",
-  "cashBillPrefix": "C-",
-  "partyBillPrefix": "P-",
-  "voucherPrefix": "V-",
-  "supplierPaymentPrefix": "S-",
+  "cashBillPrefix": "C-", "partyBillPrefix": "P-",
+  "voucherPrefix": "PV-", "supplierPaymentPrefix": "SP-",
   "startingBillNumber": 1001,
-  "openingCashInHand": 5000.00,
-  "openingCashInHandDate": "2026-10-24",
-  "printShowShopName": true,
-  "printShowAddress": true,
-  "printShowPhone": true,
-  "printShowLogo": true,
-  "printShowThankyou": true,
-  "printShowMrp": true
+  "openingCashInHand": 5000.00, "openingCashInHandDate": "2026-04-01",
+  "printShowShopName": true, "printShowAddress": true, "printShowPhone": true,
+  "printShowLogo": true, "printShowThankyou": true, "printShowMrp": true
 }
 
-### E3. Profile -> setupValuesLocked: false
+### 2. Run request 1 again -> 409 SETUP_ALREADY_DONE
+POST {{base}}/setup
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "cashBillPrefix": "C-", "partyBillPrefix": "P-",
+  "voucherPrefix": "PV-", "supplierPaymentPrefix": "SP-",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00, "openingCashInHandDate": "2026-04-01",
+  "printShowShopName": true, "printShowAddress": true, "printShowPhone": true,
+  "printShowLogo": true, "printShowThankyou": true, "printShowMrp": true
+}
+
+### 3. Shop profile
 GET {{base}}/shop-profile
 
-### E3 check (MySQL): USE vira_step8; SELECT balance FROM cash_in_hand;  -> 5000.00
-
-### E4. Item
-# @name e4
+### 4. An item (MRP 500, 10%) and a party with an opening balance
+# @name item
 POST {{base}}/items
 Content-Type: application/json
 
-{ "name": "E Brake Pad", "unit": "Pcs", "bikeIds": [],
-  "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
+{ "name": "Brake Pad", "unit": "Pcs", "itemType": "MRP", "mrp": 500.00, "defaultDiscountPercent": 10.00 }
 
-### E5. Cash Bill -> billNo "C-1001"
-POST {{base}}/bills
-Content-Type: application/json
-
-{ "billType": "CASH", "billDate": "2026-10-24",
-  "lines": [ { "itemId": {{e4.response.body.id}}, "qty": 2, "mrp": 500.00, "discountPercent": 10.00 } ] }
-
-### E6. Party
-# @name e6
+###
+# @name partyA
 POST {{base}}/parties
 Content-Type: application/json
 
-{ "name": "E Step8 Party" }
+{ "name": "Ramesh Motors", "openingBalance": 200.00 }
 
-### E7. Party Bill -> billNo "P-1002"
+### 5. Cash Bill -> bill_no C-1001
+# @name cashBill
 POST {{base}}/bills
 Content-Type: application/json
 
-{ "billType": "PARTY", "partyId": {{e6.response.body.id}}, "billDate": "2026-10-24",
-  "lines": [ { "itemId": {{e4.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+{ "billType": "CASH", "billDate": "2026-10-22",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 2, "mrp": 500.00, "discountPercent": 10.00 } ] }
 
-### E8. Voucher -> voucherNo "V-1"
+### 6. Party Bill -> bill_no P-1002, previousBalance 200.00, totalDue 650.00
+# @name partyBill
+POST {{base}}/bills
+Content-Type: application/json
+
+{ "billType": "PARTY", "partyId": {{partyA.response.body.id}}, "billDate": "2026-10-22",
+  "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
+
+### 7. Read it back -> the same previousBalance and totalDue
+GET {{base}}/bills/{{partyBill.response.body.id}}
+
+### 8. Starting Bill Number is locked now -> 409 SETUP_VALUES_LOCKED
+PUT {{base}}/shop-profile
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "cashBillPrefix": "C-", "partyBillPrefix": "P-",
+  "voucherPrefix": "PV-", "supplierPaymentPrefix": "SP-",
+  "startingBillNumber": 5000,
+  "openingCashInHand": 5000.00, "openingCashInHandDate": "2026-04-01",
+  "printShowShopName": true, "printShowAddress": true, "printShowPhone": true,
+  "printShowLogo": true, "printShowThankyou": true, "printShowMrp": true
+}
+
+### 9. Delete the Cash Bill
+DELETE {{base}}/bills/{{cashBill.response.body.id}}
+
+### 10. Daybook without deleted -> summary.totalBills 1
+GET {{base}}/daybook?from=2026-10-01&to=2026-10-31
+
+### 11. Daybook with deleted -> two rows, the same summary
+GET {{base}}/daybook?from=2026-10-01&to=2026-10-31&includeDeleted=true
+
+### 12. Keyword search by item name, and the Party's Bills tab
+GET {{base}}/daybook?keyword=brake
+
+###
+GET {{base}}/daybook?partyId={{partyA.response.body.id}}
+
+### 13. A voucher, its list (deleted included), and the balance summary
+# @name voucher
 POST {{base}}/payment-vouchers
 Content-Type: application/json
 
-{ "partyId": {{e6.response.body.id}}, "paymentDate": "2026-10-24", "amount": 100.00, "paymentMode": "CASH" }
+{ "partyId": {{partyA.response.body.id}}, "paymentDate": "2026-10-22", "amount": 650.00, "paymentMode": "ONLINE" }
 
-### E9. Recalculate preview -> storedCash equals expectedCash (6000.00), no party mismatches
+###
+GET {{base}}/payment-vouchers?partyId={{partyA.response.body.id}}&includeDeleted=true
+
+###
+GET {{base}}/parties/{{partyA.response.body.id}}/balance-summary
+
+### 14. Party item rates
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": {{item.response.body.id}}, "customer": "PARTY", "partyId": {{partyA.response.body.id}},
+  "field": "DISCOUNT_PERCENT", "newValue": 15.00 }
+
+###
+GET {{base}}/parties/{{partyA.response.body.id}}/item-rates
+
+### 15. Dashboard: a month (daily trend) and a quarter (monthly trend)
+GET {{base}}/dashboard?period=MONTH
+
+###
+GET {{base}}/dashboard?period=CUSTOM&from=2026-10-01&to=2026-12-31
+
+### 16. Part search, Settings, Recalculate
+GET {{base}}/part-search?q=brake
+
+###
+GET {{base}}/settings
+
+###
+PUT {{base}}/settings
+Content-Type: application/json
+
+{ "defaultBillType": "CASH", "defaultFocusField": "item_search", "defaultPrinter": "",
+  "dateFormat": "DD-MM-YYYY", "theme": "dark" }
+
+###
 GET {{base}}/maintenance/recalculate-balances
-
-### E10. Change starting number -> 409 SETUP_VALUES_LOCKED
-PUT {{base}}/shop-profile
-Content-Type: application/json
-
-{
-  "shopName": "Chirag Auto Parts",
-  "address": "Test Address",
-  "phone": "9999999999",
-  "cashBillPrefix": "C-",
-  "partyBillPrefix": "P-",
-  "voucherPrefix": "V-",
-  "supplierPaymentPrefix": "S-",
-  "startingBillNumber": 2000,
-  "openingCashInHand": 5000.00,
-  "openingCashInHandDate": "2026-10-24",
-  "printShowShopName": true,
-  "printShowAddress": true,
-  "printShowPhone": true,
-  "printShowLogo": true,
-  "printShowThankyou": true,
-  "printShowMrp": true
-}
-
-### E11. Change only a prefix -> 200, cashBillPrefix "CB-"
-PUT {{base}}/shop-profile
-Content-Type: application/json
-
-{
-  "shopName": "Chirag Auto Parts",
-  "address": "Test Address",
-  "phone": "9999999999",
-  "cashBillPrefix": "CB-",
-  "partyBillPrefix": "P-",
-  "voucherPrefix": "V-",
-  "supplierPaymentPrefix": "S-",
-  "startingBillNumber": 1001,
-  "openingCashInHand": 5000.00,
-  "openingCashInHandDate": "2026-10-24",
-  "printShowShopName": true,
-  "printShowAddress": true,
-  "printShowPhone": true,
-  "printShowLogo": true,
-  "printShowThankyou": true,
-  "printShowMrp": true
-}
-
-### E12. Setup again -> 409 SETUP_ALREADY_DONE
-POST {{base}}/setup
-Content-Type: application/json
-
-{
-  "shopName": "Chirag Auto Parts",
-  "startingBillNumber": 1001,
-  "openingCashInHand": 5000.00,
-  "openingCashInHandDate": "2026-10-24",
-  "printShowShopName": true,
-  "printShowAddress": true,
-  "printShowPhone": true,
-  "printShowLogo": true,
-  "printShowThankyou": true,
-  "printShowMrp": true
-}
-
-
-
-
-
-
-@base = http://127.0.0.1:8080/api
-
-### Send each request ONCE, top to bottom.
-
-### 9-1. Defaults -> CASH, item_search, "", DD-MM-YYYY, light
-GET {{base}}/settings
-
-### 9-2. Update -> 200, echoes the new values
-PUT {{base}}/settings
-Content-Type: application/json
-
-{ "defaultBillType": "PARTY", "defaultFocusField": "party_search",
-  "defaultPrinter": "  Shop Printer  ", "dateFormat": "YYYY-MM-DD", "theme": "dark" }
-
-### 9-3. Read back -> defaultPrinter "Shop Printer" (trimmed), theme "dark"
-GET {{base}}/settings
-
-### 9-4. Bad theme -> 400 VALIDATION_FAILED, fieldErrors has "theme"
-PUT {{base}}/settings
-Content-Type: application/json
-
-{ "defaultBillType": "CASH", "defaultFocusField": "item_search",
-  "defaultPrinter": "", "dateFormat": "DD-MM-YYYY", "theme": "blue" }
-
-### 9-5. Several bad fields -> 400 VALIDATION_FAILED with 4 fieldErrors
-PUT {{base}}/settings
-Content-Type: application/json
-
-{ "defaultBillType": "BOTH", "defaultFocusField": "Item Search",
-  "defaultPrinter": "", "dateFormat": "31/12/2026", "theme": "red" }
-
-### 9-6. Missing field -> 400 VALIDATION_FAILED
-PUT {{base}}/settings
-Content-Type: application/json
-
-{ "defaultBillType": "CASH", "defaultPrinter": "", "dateFormat": "DD-MM-YYYY", "theme": "light" }
-
-### 9-7. After 9-4 to 9-6, values must be unchanged from 9-2 (theme still "dark")
-GET {{base}}/settings
-
-### 9-8. RESTART THE APP, then send this -> same values as 9-2 (persisted)
-GET {{base}}/settings
-
-### 9-9. Put the defaults back
-PUT {{base}}/settings
-Content-Type: application/json
-
-{ "defaultBillType": "CASH", "defaultFocusField": "item_search",
-  "defaultPrinter": "", "dateFormat": "DD-MM-YYYY", "theme": "light" }
