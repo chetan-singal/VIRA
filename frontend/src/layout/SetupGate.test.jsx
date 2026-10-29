@@ -29,8 +29,10 @@ function renderAt(path) {
 }
 
 describe('SetupGate (SRS §18.3)', () => {
-  beforeEach(() => setupApi.status.mockReset());
-
+  beforeEach(() => {
+    setupApi.status.mockReset();
+  });
+  
   it('shows a splash while the status is loading', () => {
     setupApi.status.mockReturnValue(new Promise(() => {}));
     renderAt('/');
