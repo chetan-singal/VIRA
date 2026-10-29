@@ -53,7 +53,7 @@ Content-Type: application/json
 POST {{base}}/bills
 Content-Type: application/json
 
-{ "billType": "CASH", "billDate": "2026-10-28",
+{ "billType": "CASH", "billDate": "2026-10-29",
   "lines": [ { "itemId": {{item.response.body.id}}, "qty": 2, "mrp": 500.00, "discountPercent": 10.00 } ] }
 
 ### 6. Party Bill -> bill_no P-1002, previousBalance 200.00, totalDue 650.00
@@ -61,7 +61,7 @@ Content-Type: application/json
 POST {{base}}/bills
 Content-Type: application/json
 
-{ "billType": "PARTY", "partyId": {{partyA.response.body.id}}, "billDate": "2026-10-28",
+{ "billType": "PARTY", "partyId": {{partyA.response.body.id}}, "billDate": "2026-10-29",
   "lines": [ { "itemId": {{item.response.body.id}}, "qty": 1, "mrp": 500.00, "discountPercent": 10.00 } ] }
 
 ### 7. Read it back -> the same previousBalance and totalDue
