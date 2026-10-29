@@ -9,3 +9,6 @@
 | A5 | §19.1 | Allowed values: Default Bill Type CASH or PARTY; Date format DD-MM-YYYY, MM-DD-YYYY or YYYY-MM-DD; Theme light or dark; Default focus field lower-case letters and underscores (tightened with the New Bill screen); Default printer free text. |
 | A6 | §16.1, §16.4 | Today, This Month and This Year are whole calendar periods. Recent Bills, Payments and Supplier Payments show the latest records overall, deleted ones included and tagged. |
 | A7 | §9.2, §14.2 | The Deleted Parties and Deleted Suppliers views list soft-deleted records; each record carries its deleted flag. |
+
+| A8 | §18.2, §22.8 | The shop logo is stored as a file on the PC and its path is kept in shop_profile.logo_path. POST, GET and DELETE /api/shop-profile/logo upload, serve and remove it; they are built with the Shop Profile screen in Phase 8. The Phase 14 backup scope includes the logo folder. |
+| A9 | §9.3 | The Selected Party page's Transaction History tab lists the party's bills and payments together in date order. The screen merges GET /api/daybook?partyId= and GET /api/payment-vouchers?partyId=, with the same Edit / Delete / Restore control. There is no running-balance column and no backend change. |
