@@ -85,7 +85,11 @@ export default function SearchSelect({ id, value, onChange, search, placeholder 
         disabled={disabled}
         placeholder={placeholder}
         value={typing ? query : value?.label ?? ''}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          setTyping(true);
+          setQuery('');
+        }}
         onBlur={close}
         onChange={(e) => {
           setTyping(true);
