@@ -8,6 +8,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.util.List;
 
@@ -34,6 +36,16 @@ public class ApiExceptionHandler {
                 new ApiError("VALIDATION_FAILED", "Please correct the highlighted fields.", errors));
     }
 
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> uploadTooLarge(MaxUploadSizeExceededException e) {
+        return fileError("The image is larger than 2 MB.");
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiError> uploadMissing(MissingServletRequestPartException e) {
+        return fileError("Choose an image file to upload.");
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> malformed(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest().body(
@@ -56,5 +68,10 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiError> conflict(DataIntegrityViolationException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(
                 new ApiError("DATA_CONFLICT", "The change conflicts with existing data.", List.of()));
+    }
+
+    private ResponseEntity<ApiError> fileError(String message) {
+        return ResponseEntity.badRequest().body(new ApiError("VALIDATION_FAILED",
+                "Please correct the highlighted fields.", List.of(new ApiError.FieldError("file", message))));
     }
 }
