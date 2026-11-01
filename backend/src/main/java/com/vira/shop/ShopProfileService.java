@@ -124,6 +124,13 @@ public class ShopProfileService {
         p.setPrintShowThankyou(r.printShowThankyou());
         p.setPrintShowMrp(r.printShowMrp());
         p.setPrintTermsConditions(r.printTermsConditions());
+        p.setTopLine(blankToNull(r.topLine()));
+    }
+
+    private static String blankToNull(String text) {
+        if (text == null) return null;
+        String trimmed = text.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /** Moves Cash in Hand to exactly the opening figure — through LedgerService, the only writer. */

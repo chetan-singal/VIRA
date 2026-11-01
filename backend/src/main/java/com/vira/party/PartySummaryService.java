@@ -1,6 +1,7 @@
 package com.vira.party;
 
 import com.vira.bill.BillRepository;
+import com.vira.common.Money;
 import com.vira.common.NotFoundException;
 import com.vira.voucher.PaymentVoucherRepository;
 
@@ -31,6 +32,16 @@ public class PartySummaryService {
                 nz(bills.sumGrandTotalForPartyActive(partyId)),
                 nz(vouchers.sumByPartyActive(partyId)),
                 p.getCurrentBalance());
+    }
+
+    /** Figures for the Parties list tiles: active parties only, from stored balances. */
+    @Transactional(readOnly = true)
+    public PartyListSummary overall() {
+        return new PartyListSummary(
+                parties.countActive(),
+                parties.countActiveWithBalance(),
+                Money.round(nz(parties.sumActiveOutstanding())),
+                Money.round(nz(parties.sumActiveAdvance()).negate()));
     }
 
     private static BigDecimal nz(BigDecimal v) {

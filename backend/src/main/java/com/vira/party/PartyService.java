@@ -50,7 +50,7 @@ public class PartyService {
     public PageResponse<PartyResponse> list(String q, boolean deletedOnly, Pageable pageable) {
         Specification<Party> spec = Specification.allOf(
                 deletedOnly ? PartySpecifications.deleted() : PartySpecifications.notDeleted(),
-                PartySpecifications.nameContains(q));
+                PartySpecifications.matches(q));
         return PageResponse.of(parties.findAll(spec, pageable).map(this::toResponse));
     }
 

@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.*;
 public class SupplierController {
 
     private final SupplierService supplierService;
+    private final SupplierSummaryService summaryService;
 
-    public SupplierController(SupplierService supplierService) {
+    public SupplierController(SupplierService supplierService, SupplierSummaryService summaryService) {
         this.supplierService = supplierService;
+        this.summaryService = summaryService;
     }
 
     @GetMapping
@@ -24,9 +26,19 @@ public class SupplierController {
         return supplierService.list(q, deleted, pageable);
     }
 
+    @GetMapping("/summary")
+    public SupplierListSummary summary() {
+        return summaryService.overall();
+    }
+
     @GetMapping("/{id}")
     public SupplierResponse get(@PathVariable Long id) {
         return supplierService.get(id);
+    }
+
+    @GetMapping("/{id}/summary")
+    public SupplierPaymentTotals supplierSummary(@PathVariable Long id) {
+        return summaryService.forSupplier(id);
     }
 
     @PostMapping

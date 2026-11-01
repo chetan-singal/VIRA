@@ -10,7 +10,7 @@ public record ShopProfileResponse(
         Integer startingBillNumber, BigDecimal openingCashInHand, LocalDate openingCashInHandDate,
         boolean printShowShopName, boolean printShowAddress, boolean printShowPhone,
         boolean printShowLogo, boolean printShowThankyou, boolean printShowMrp,
-        String printTermsConditions, boolean setupValuesLocked) {
+        String printTermsConditions, String topLine, boolean setupValuesLocked) {
 
     static ShopProfileResponse from(ShopProfile p, boolean locked) {
         boolean hasLogo = p.getLogoPath() != null && !p.getLogoPath().isBlank();
@@ -21,6 +21,6 @@ public record ShopProfileResponse(
                 p.getSupplierPaymentPrefix(), p.getStartingBillNumber(), p.getOpeningCashInHand(),
                 p.getOpeningCashInHandDate(), p.isPrintShowShopName(), p.isPrintShowAddress(),
                 p.isPrintShowPhone(), p.isPrintShowLogo(), p.isPrintShowThankyou(), p.isPrintShowMrp(),
-                p.getPrintTermsConditions(), locked);
+                p.getPrintTermsConditions(), p.getTopLine(), locked);
     }
 }

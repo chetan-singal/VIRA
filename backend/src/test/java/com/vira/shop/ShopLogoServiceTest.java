@@ -42,7 +42,7 @@ class ShopLogoServiceTest {
     private void setup() {
         shopProfileService.setup(new ShopProfileRequest("Chirag Auto Parts", null, null, null, null, null, null, null, null,
                 "C-", "P-", "PV-", "SP-", 1, new BigDecimal("0.00"),
-                LocalDate.of(2026, 4, 1), true, true, true, true, true, true, null));
+                LocalDate.of(2026, 4, 1), true, true, true, true, true, true, null, null));
     }
 
     private static byte[] png(int size) {

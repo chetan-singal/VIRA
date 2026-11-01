@@ -1,0 +1,94 @@
+@base = http://127.0.0.1:8080/api
+
+### 1. First-run setup (fresh database)
+POST {{base}}/setup
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "cashBillPrefix": "C-", "partyBillPrefix": "P-",
+  "voucherPrefix": "PV-", "supplierPaymentPrefix": "SP-",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00, "openingCashInHandDate": "2026-04-01",
+  "printShowShopName": true, "printShowAddress": true, "printShowPhone": true,
+  "printShowLogo": true, "printShowThankyou": true, "printShowMrp": true
+}
+
+### 2. Bill top line: save one -> topLine comes back
+PUT {{base}}/shop-profile
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "cashBillPrefix": "C-", "partyBillPrefix": "P-",
+  "voucherPrefix": "PV-", "supplierPaymentPrefix": "SP-",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00, "openingCashInHandDate": "2026-04-01",
+  "printShowShopName": true, "printShowAddress": true, "printShowPhone": true,
+  "printShowLogo": true, "printShowThankyou": true, "printShowMrp": true,
+  "topLine": "Shree Ganeshaya Namah"
+}
+
+### 3. Blank top line -> topLine null
+PUT {{base}}/shop-profile
+Content-Type: application/json
+
+{
+  "shopName": "Chirag Auto Parts",
+  "cashBillPrefix": "C-", "partyBillPrefix": "P-",
+  "voucherPrefix": "PV-", "supplierPaymentPrefix": "SP-",
+  "startingBillNumber": 1001,
+  "openingCashInHand": 5000.00, "openingCashInHandDate": "2026-04-01",
+  "printShowShopName": true, "printShowAddress": true, "printShowPhone": true,
+  "printShowLogo": true, "printShowThankyou": true, "printShowMrp": true,
+  "topLine": "   "
+}
+
+### 4. Two parties
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "Search Party", "phone": "9822011223", "city": "Kolhapur", "openingBalance": 300.00 }
+
+###
+POST {{base}}/parties
+Content-Type: application/json
+
+{ "name": "Advance Party", "openingBalance": -100.00 }
+
+### 5. Search by city text, then by phone digits -> one party each
+GET {{base}}/parties?q=kolhap
+
+###
+GET {{base}}/parties?q=822011
+
+### 6. Party summary -> totalParties 2, partiesWithBalance 2, totalOutstanding 300.00, totalAdvance 100.00
+GET {{base}}/parties/summary
+
+### 7. A supplier and a search by city
+# @name supplier
+POST {{base}}/suppliers
+Content-Type: application/json
+
+{ "name": "Hero Depot", "phone": "9822077889", "city": "Pune" }
+
+###
+GET {{base}}/suppliers?q=pune
+
+### 8. A supplier payment (cash 250.00)
+POST {{base}}/supplier-payments
+Content-Type: application/json
+
+{ "supplierId": {{supplier.response.body.id}}, "paymentDate": "2026-11-01", "amount": 250.00, "paymentMode": "CASH" }
+
+### 9. Supplier summary -> totalSuppliers 1, paymentCount 1, paymentTotal 250.00, cashInHand 4750.00
+GET {{base}}/suppliers/summary
+
+### 10. Dashboard -> kpis.cashInHand 4750.00 (the same figure)
+GET {{base}}/dashboard?period=TODAY
+
+### 11. One supplier -> paymentCount 1, paymentTotal 250.00
+GET {{base}}/suppliers/{{supplier.response.body.id}}/summary
+
+### 12. Unknown supplier -> 404 NOT_FOUND
+GET {{base}}/suppliers/999999/summary

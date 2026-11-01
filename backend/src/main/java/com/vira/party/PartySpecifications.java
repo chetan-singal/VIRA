@@ -13,12 +13,16 @@ public final class PartySpecifications {
         return (root, query, cb) -> cb.isTrue(root.get("deleted"));
     }
 
-    public static Specification<Party> nameContains(String q) {
+    /** Case-insensitive contains on name, city or phone. A blank q matches everything. */
+    public static Specification<Party> matches(String q) {
         return (root, query, cb) -> {
             if (q == null || q.isBlank()) return null;
             String like = "%" + q.trim().toLowerCase()
                     .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
-            return cb.like(cb.lower(root.get("name")), like, '\\');
+            return cb.or(
+                    cb.like(cb.lower(root.get("name")), like, '\\'),
+                    cb.like(cb.lower(root.get("city")), like, '\\'),
+                    cb.like(cb.lower(root.get("phone")), like, '\\'));
         };
     }
 }

@@ -31,5 +31,6 @@ public record ShopProfileRequest(
         @NotNull Boolean printShowLogo,
         @NotNull Boolean printShowThankyou,
         @NotNull Boolean printShowMrp,
-        @Size(max = 1000) String printTermsConditions) {
+        @Size(max = 1000) String printTermsConditions,
+        @Size(max = 100) String topLine) {
 }

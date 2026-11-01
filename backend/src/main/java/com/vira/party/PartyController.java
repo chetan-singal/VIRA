@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.*;
 public class PartyController {
 
     private final PartyService partyService;
+    private final PartySummaryService summaryService;
 
-    public PartyController(PartyService partyService) {
+    public PartyController(PartyService partyService, PartySummaryService summaryService) {
         this.partyService = partyService;
+        this.summaryService = summaryService;
     }
 
     @GetMapping
@@ -22,6 +24,11 @@ public class PartyController {
                                             @RequestParam(defaultValue = "false") boolean deleted,
                                             Pageable pageable) {
         return partyService.list(q, deleted, pageable);
+    }
+
+    @GetMapping("/summary")
+    public PartyListSummary summary() {
+        return summaryService.overall();
     }
 
     @GetMapping("/{id}")

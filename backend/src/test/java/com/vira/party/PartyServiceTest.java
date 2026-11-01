@@ -96,4 +96,33 @@ class PartyServiceTest {
         assertThat(deleted.content()).hasSize(1);
         assertThat(deleted.content().get(0).deleted()).isTrue();
     }
+
+    @Test
+    void listFindsAPartyByCityTextAndByPhoneDigits() {
+        partyService.create(new PartyRequest("Search Test Party", "9822011223", null, "Kolhapur", null, null, null));
+        partyService.create(new PartyRequest("Other Search Party", "9000000001", null, "Nashik", null, null, null));
+
+        var byCity = partyService.list("kolhap", PageRequest.of(0, 10));
+        assertThat(byCity.content()).hasSize(1);
+        assertThat(byCity.content().get(0).name()).isEqualTo("Search Test Party");
+
+        var byPhone = partyService.list("822011", PageRequest.of(0, 10));
+        assertThat(byPhone.content()).hasSize(1);
+        assertThat(byPhone.content().get(0).name()).isEqualTo("Search Test Party");
+    }
+
+    @Test
+    void deletedTabSearchMatchesCityAndPhoneToo() {
+        PartyResponse party = partyService.create(
+                new PartyRequest("Deleted Search Party", "9822044556", null, "Satara", null, null, null));
+        partyService.delete(party.id());
+
+        assertThat(partyService.list("satara", false, PageRequest.of(0, 10)).content()).isEmpty();
+        assertThat(partyService.list("822044", false, PageRequest.of(0, 10)).content()).isEmpty();
+
+        PageResponse<PartyResponse> byCity = partyService.list("satara", true, PageRequest.of(0, 10));
+        assertThat(byCity.content()).hasSize(1);
+        assertThat(byCity.content().get(0).deleted()).isTrue();
+        assertThat(partyService.list("822044", true, PageRequest.of(0, 10)).content()).hasSize(1);
+    }
 }

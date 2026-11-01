@@ -44,7 +44,13 @@ class ShopProfileServiceTest {
     private ShopProfileRequest profile(String cashPrefix, String partyPrefix, int start, String openingCash) {
         return new ShopProfileRequest("Chirag Auto Parts", null, null, null, null, null, null, null, null,
                 cashPrefix, partyPrefix, "PV-", "SP-", start, new BigDecimal(openingCash),
-                LocalDate.of(2026, 4, 1), true, true, true, true, true, true, null);
+                LocalDate.of(2026, 4, 1), true, true, true, true, true, true, null, null);
+    }
+
+    private ShopProfileRequest profileWithTopLine(String topLine) {
+        return new ShopProfileRequest("Chirag Auto Parts", null, null, null, null, null, null, null, null,
+                "C-", "P-", "PV-", "SP-", 1, new BigDecimal("0.00"),
+                LocalDate.of(2026, 4, 1), true, true, true, true, true, true, null, topLine);
     }
 
     private Long newItem(String name) {
@@ -125,5 +131,23 @@ class ShopProfileServiceTest {
         RecalculateReport report = recalculateBalancesService.check();
 
         assertThat(report.expectedCash()).isEqualByComparingTo(report.storedCash());
+    }
+
+    @Test
+    void topLineIsTrimmedSavedAndReturned() {
+        ShopProfileResponse saved = shopProfileService.setup(profileWithTopLine("  Shree Ganeshaya Namah  "));
+
+        assertThat(saved.topLine()).isEqualTo("Shree Ganeshaya Namah");
+        assertThat(shopProfileService.get().topLine()).isEqualTo("Shree Ganeshaya Namah");
+    }
+
+    @Test
+    void blankTopLineBecomesNull() {
+        shopProfileService.setup(profileWithTopLine("Jai Hind"));
+
+        ShopProfileResponse updated = shopProfileService.update(profileWithTopLine("   "));
+
+        assertThat(updated.topLine()).isNull();
+        assertThat(shopProfileService.get().topLine()).isNull();
     }
 }

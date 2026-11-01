@@ -39,6 +39,21 @@ class SupplierServiceTest {
         assertThat(page.content()).hasSize(1);
         assertThat(page.content().get(0).name()).isEqualTo("Hero Spares Co");
     }
+
+    @Test
+    void listFindsASupplierByCityAndByPhone() {
+        supplierService.create(new SupplierRequest("City Search Supplier", "9822077889", "Kolhapur"));
+        supplierService.create(new SupplierRequest("Other Search Supplier", "9000000002", "Nashik"));
+
+        var byCity = supplierService.list("kolhap", PageRequest.of(0, 10));
+        assertThat(byCity.content()).hasSize(1);
+        assertThat(byCity.content().get(0).name()).isEqualTo("City Search Supplier");
+
+        var byPhone = supplierService.list("822077", PageRequest.of(0, 10));
+        assertThat(byPhone.content()).hasSize(1);
+        assertThat(byPhone.content().get(0).name()).isEqualTo("City Search Supplier");
+    }
+
     @Test
     void deleteWorksAtAnyBalanceAndRestoreClearsFlag() {
         SupplierResponse supplier = supplierService.create(new SupplierRequest("Delete Test Supplier", null, null));

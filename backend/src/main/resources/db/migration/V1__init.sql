@@ -243,6 +243,7 @@ CREATE TABLE shop_profile (
     pin_code                  VARCHAR(10)   NULL,
     notes                     VARCHAR(500)  NULL,
     logo_path                 VARCHAR(255)  NULL,
+    top_line                  VARCHAR(100)  NULL,
     cash_bill_prefix          VARCHAR(20)   NULL,
     party_bill_prefix         VARCHAR(20)   NULL,
     voucher_prefix            VARCHAR(20)   NULL,

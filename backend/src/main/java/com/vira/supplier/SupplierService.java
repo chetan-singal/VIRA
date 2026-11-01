@@ -42,7 +42,7 @@ public class SupplierService {
     public PageResponse<SupplierResponse> list(String q, boolean deletedOnly, Pageable pageable) {
         Specification<Supplier> spec = Specification.allOf(
                 deletedOnly ? SupplierSpecifications.deleted() : SupplierSpecifications.notDeleted(),
-                SupplierSpecifications.nameContains(q));
+                SupplierSpecifications.matches(q));
         return PageResponse.of(suppliers.findAll(spec, pageable).map(this::toResponse));
     }
 

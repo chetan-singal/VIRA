@@ -81,6 +81,9 @@ public class ShopProfile {
     @Column(name = "print_show_mrp", nullable = false)
     private boolean printShowMrp = true;
 
+    @Column(name = "top_line", length = 100)
+    private String topLine;
+
     @Column(name = "opening_cash_in_hand")
     private BigDecimal openingCashInHand;
 
@@ -155,6 +158,9 @@ public class ShopProfile {
 
     public boolean isPrintShowMrp() { return printShowMrp; }
     public void setPrintShowMrp(boolean printShowMrp) { this.printShowMrp = printShowMrp; }
+
+    public String getTopLine() { return topLine; }
+    public void setTopLine(String topLine) { this.topLine = topLine; }
 
     public BigDecimal getOpeningCashInHand() { return openingCashInHand; }
     public void setOpeningCashInHand(BigDecimal openingCashInHand) { this.openingCashInHand = openingCashInHand; }
