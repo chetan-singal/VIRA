@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { cx } from '../../lib/cx';
 import { describeError } from '../../lib/errors';
 import IconButton from '../ui/IconButton';
 import { useToast } from '../ui/Toast';
@@ -14,9 +15,10 @@ import { getRowState, RECORD_TYPES } from './recordTypes';
  *   deleted record  -> Restore (the "Deleted" badge is StatusBadges, shown beside it)
  *   locked record   -> the same icons, disabled, with the server's reason as the tooltip
  * `children` render before the icons (View / Print). `ops` overrides the API calls (component gallery, tests).
+ * `labeled` shows the words Edit, Delete and Restore beside the icons (page headers and detail panels).
  * onChanged({ action: 'updated' | 'deleted' | 'restored', record }) tells the screen to reload.
  */
-export default function RowActions({ type, record, onChanged, ops, children }) {
+export default function RowActions({ type, record, onChanged, ops, labeled = false, children }) {
   const def = RECORD_TYPES[type];
   const navigate = useNavigate();
   const toast = useToast();
@@ -60,14 +62,14 @@ export default function RowActions({ type, record, onChanged, ops, children }) {
   }
 
   return (
-    <span className="row-actions" onClick={(event) => event.stopPropagation()}>
+    <span className={cx('row-actions', labeled && 'labeled')} onClick={(event) => event.stopPropagation()}>
       {children}
       {state.deleted ? (
-        <IconButton icon="restore" tone="restore" label={`Restore ${def.label} ${number}`} disabled={!state.canRestore} reason={state.restoreReason} busy={restoring} onClick={restore} />
+        <IconButton icon="restore" tone="restore" label={`Restore ${def.label} ${number}`} text={labeled ? 'Restore' : undefined} disabled={!state.canRestore} reason={state.restoreReason} busy={restoring} onClick={restore} />
       ) : (
         <>
-          <IconButton icon="edit" tone="edit" label={`Edit ${def.label} ${number}`} disabled={!state.canEdit} reason={state.editReason} onClick={edit} />
-          <IconButton icon="delete" tone="delete" label={`Delete ${def.label} ${number}`} disabled={!state.canDelete} reason={state.deleteReason} onClick={() => setDeleting(true)} />
+          <IconButton icon="edit" tone="edit" label={`Edit ${def.label} ${number}`} text={labeled ? 'Edit' : undefined} disabled={!state.canEdit} reason={state.editReason} onClick={edit} />
+          <IconButton icon="delete" tone="delete" label={`Delete ${def.label} ${number}`} text={labeled ? 'Delete' : undefined} disabled={!state.canDelete} reason={state.deleteReason} onClick={() => setDeleting(true)} />
         </>
       )}
       {def.Form && editing && <EditRecordModal type={type} record={record} open ops={calls} onClose={() => setEditing(false)} onSaved={saved} />}

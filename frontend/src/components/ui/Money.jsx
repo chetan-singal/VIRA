@@ -7,10 +7,10 @@ export function Money({ value, className }) {
 }
 
 /**
- * A Party's Current Balance. Positive = the party owes us. Negative = the party has paid ahead, shown as
- * "Advance / Credit" wherever a balance appears (SRS §9.4, §25.3).
+ * A Party's Current Balance. Positive = the party owes us (with `showDue`, shown red with a Due tag).
+ * Negative = the party has paid ahead, shown as "Advance / Credit" wherever a balance appears (SRS §9.4, §25.3).
  */
-export function Balance({ value }) {
+export function Balance({ value, showDue = false }) {
   const n = Number(value);
   if (value === null || value === undefined || !Number.isFinite(n)) return <span className="num">—</span>;
   if (!isZeroMoney(n) && n < 0) {
@@ -18,6 +18,14 @@ export function Balance({ value }) {
       <span className="row" style={{ gap: 6 }}>
         <span className="num">{formatMoney(Math.abs(n))}</span>
         <Badge tone="green">Advance / Credit</Badge>
+      </span>
+    );
+  }
+  if (showDue && !isZeroMoney(n) && n > 0) {
+    return (
+      <span className="row" style={{ gap: 6 }}>
+        <span className="num balance-due">{formatMoney(n)}</span>
+        <Badge tone="red">Due</Badge>
       </span>
     );
   }

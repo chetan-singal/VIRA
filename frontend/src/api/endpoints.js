@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import { api } from './client';
 
 /*
@@ -15,6 +16,14 @@ export const setupApi = {
 export const shopApi = {
   get: (opts) => api.get('/shop-profile', opts),
   update: (body, opts) => api.put('/shop-profile', body, opts),
+  uploadLogo: (file, opts) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.postForm('/shop-profile/logo', form, opts);
+  },
+  removeLogo: (opts) => api.delete('/shop-profile/logo', opts),
+  /** Address of the logo image for an <img> tag; change `version` after an upload or removal to reload it. */
+  logoUrl: (version = 0) => `${API_BASE}/shop-profile/logo?v=${version}`,
 };
 
 export const settingsApi = {
@@ -65,6 +74,7 @@ export const partyApi = {
   restore: (id, opts) => api.post(`/parties/${id}/restore`, undefined, opts),
   itemRates: (id, opts) => api.get(`/parties/${id}/item-rates`, opts),
   balanceSummary: (id, opts) => api.get(`/parties/${id}/balance-summary`, opts),
+  summary: (opts) => api.get('/parties/summary', opts), // { totalParties, partiesWithBalance, totalOutstanding, totalAdvance }
 };
 
 export const supplierApi = {
@@ -74,6 +84,8 @@ export const supplierApi = {
   update: (id, body, opts) => api.put(`/suppliers/${id}`, body, opts),
   remove: (id, opts) => api.delete(`/suppliers/${id}`, opts),
   restore: (id, opts) => api.post(`/suppliers/${id}/restore`, undefined, opts),
+  summary: (opts) => api.get('/suppliers/summary', opts), // { totalSuppliers, paymentCount, paymentTotal, cashInHand }
+  summaryFor: (id, opts) => api.get(`/suppliers/${id}/summary`, opts), // { paymentCount, paymentTotal }
 };
 
 export const itemApi = {

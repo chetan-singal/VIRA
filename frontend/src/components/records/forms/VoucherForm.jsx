@@ -8,9 +8,9 @@ import { FormActions, FormError } from './formParts';
 
 const MODES = [{ value: 'CASH', label: 'Cash' }, { value: 'ONLINE', label: 'Online' }];
 
-function initial(record) {
+function initial(record, preset) {
   return {
-    party: record ? { id: record.partyId, label: record.partyName } : null,
+    party: record ? { id: record.partyId, label: record.partyName } : preset?.party ?? null,
     paymentDate: record?.paymentDate ?? todayIso(),
     amount: record ? String(record.amount) : '',
     paymentMode: record?.paymentMode ?? 'CASH',
@@ -19,9 +19,13 @@ function initial(record) {
   };
 }
 
-/** Party Payment Voucher: used to create (with Save & New) and, inside the Edit modal, to edit. */
-export default function VoucherForm({ record, ops, onSaved, onCancel, allowSaveAndNew = false }) {
-  const { values, errors, set, setErrors, applyApiError, reset } = useForm(initial(record));
+/**
+ * Party Payment Voucher: used to create (with Save & New) and, inside the Edit modal, to edit.
+ * preset.party fills and locks the Party of a new voucher (Record Payment from a party page).
+ */
+export default function VoucherForm({ record, ops, preset, onSaved, onCancel, allowSaveAndNew = false }) {
+  const { values, errors, set, setErrors, applyApiError, reset } = useForm(initial(record, preset));
+  const partyLocked = !record && Boolean(preset?.party);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
   const searchParties = useCallback((q) => ops.lookupParties(q), [ops]);
@@ -46,7 +50,7 @@ export default function VoucherForm({ record, ops, onSaved, onCancel, allowSaveA
         referenceNo: emptyToNull(values.referenceNo),
         remarks: emptyToNull(values.remarks),
       });
-      if (another) reset(initial(null));
+      if (another) reset(initial(null, preset));
       onSaved?.(saved, { another });
     } catch (error) {
       if (!applyApiError(error)) setFormError(error);
@@ -64,7 +68,7 @@ export default function VoucherForm({ record, ops, onSaved, onCancel, allowSaveA
           {(p) => <DateInput {...p} value={values.paymentDate} onChange={(e) => set('paymentDate', e.target.value)} />}
         </Field>
         <Field label="Party" required error={errors.partyId} className="span-2">
-          {(p) => <SearchSelect id={p.id} invalid={Boolean(errors.partyId)} value={values.party} search={searchParties} placeholder="Search a party by name" onChange={(party) => set('party', party)} />}
+          {(p) => <SearchSelect id={p.id} invalid={Boolean(errors.partyId)} disabled={partyLocked} value={values.party} search={searchParties} placeholder="Search a party by name" onChange={(party) => set('party', party)} />}
         </Field>
         <Field label="Amount" required error={errors.amount}>
           {(p) => <MoneyInput {...p} value={values.amount} onChange={(v) => set('amount', v)} placeholder="0.00" />}

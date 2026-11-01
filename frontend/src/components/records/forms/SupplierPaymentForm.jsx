@@ -8,9 +8,9 @@ import { FormActions, FormError } from './formParts';
 
 const MODES = [{ value: 'CASH', label: 'Cash' }, { value: 'ONLINE', label: 'Online' }];
 
-function initial(record) {
+function initial(record, preset) {
   return {
-    supplier: record ? { id: record.supplierId, label: record.supplierName } : null,
+    supplier: record ? { id: record.supplierId, label: record.supplierName } : preset?.supplier ?? null,
     paymentDate: record?.paymentDate ?? todayIso(),
     amount: record ? String(record.amount) : '',
     paymentMode: record?.paymentMode ?? 'CASH',
@@ -19,9 +19,13 @@ function initial(record) {
   };
 }
 
-/** Outgoing Supplier Payment: reduces the one combined Cash in Hand, whatever the mode. */
-export default function SupplierPaymentForm({ record, ops, onSaved, onCancel, allowSaveAndNew = false }) {
-  const { values, errors, set, setErrors, applyApiError, reset } = useForm(initial(record));
+/**
+ * Outgoing Supplier Payment: reduces the one combined Cash in Hand, whatever the mode.
+ * preset.supplier fills and locks the Supplier of a new payment (New Payment from a supplier page).
+ */
+export default function SupplierPaymentForm({ record, ops, preset, onSaved, onCancel, allowSaveAndNew = false }) {
+  const { values, errors, set, setErrors, applyApiError, reset } = useForm(initial(record, preset));
+  const supplierLocked = !record && Boolean(preset?.supplier);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
   const searchSuppliers = useCallback((q) => ops.lookupSuppliers(q), [ops]);
@@ -46,7 +50,7 @@ export default function SupplierPaymentForm({ record, ops, onSaved, onCancel, al
         referenceNo: emptyToNull(values.referenceNo),
         remarks: emptyToNull(values.remarks),
       });
-      if (another) reset(initial(null));
+      if (another) reset(initial(null, preset));
       onSaved?.(saved, { another });
     } catch (error) {
       if (!applyApiError(error)) setFormError(error);
@@ -64,7 +68,7 @@ export default function SupplierPaymentForm({ record, ops, onSaved, onCancel, al
           {(p) => <DateInput {...p} value={values.paymentDate} onChange={(e) => set('paymentDate', e.target.value)} />}
         </Field>
         <Field label="Supplier" required error={errors.supplierId} className="span-2">
-          {(p) => <SearchSelect id={p.id} invalid={Boolean(errors.supplierId)} value={values.supplier} search={searchSuppliers} placeholder="Search a supplier by name" onChange={(s) => set('supplier', s)} />}
+          {(p) => <SearchSelect id={p.id} invalid={Boolean(errors.supplierId)} disabled={supplierLocked} value={values.supplier} search={searchSuppliers} placeholder="Search a supplier by name" onChange={(s) => set('supplier', s)} />}
         </Field>
         <Field label="Amount" required error={errors.amount}>
           {(p) => <MoneyInput {...p} value={values.amount} onChange={(v) => set('amount', v)} placeholder="0.00" />}

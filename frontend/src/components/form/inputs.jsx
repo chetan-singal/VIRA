@@ -57,6 +57,34 @@ export function MoneyInput({ value, onChange, allowNegative = false, className, 
   );
 }
 
+/** Text box for a percentage: digits, one dot, two decimals, a % sign at the end. The backend enforces 0 to 100. */
+export function PercentInput({ value, onChange, className, ...rest }) {
+  return (
+    <div className="input-adorn end">
+      <input
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        className={cx('input', 'num', className)}
+        value={value}
+        onChange={(e) => onChange(sanitizeMoney(e.target.value))}
+        {...rest}
+      />
+      <span>%</span>
+    </div>
+  );
+}
+
+/** A check box with its label beside it. onChange gets true or false. */
+export function Checkbox({ checked, onChange, label, disabled = false, className, ...rest }) {
+  return (
+    <label className={cx('checkbox', className)}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} {...rest} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
 /** Segmented radio group, e.g. Cash | Online. options: [{ value, label }]. */
 export function ChoiceGroup({ name, value, onChange, options, label }) {
   return (

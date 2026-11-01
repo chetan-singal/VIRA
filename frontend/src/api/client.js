@@ -38,16 +38,22 @@ async function readBody(response) {
   }
 }
 
-async function request(method, path, { query, body, signal } = {}) {
+async function request(method, path, { query, body, form, signal } = {}) {
   const headers = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  let payload;
+  if (form !== undefined) {
+    payload = form; // FormData: the browser adds the multipart Content-Type and boundary itself
+  } else if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    payload = JSON.stringify(body);
+  }
 
   let response;
   try {
     response = await fetch(`${API_BASE}${path}${toQuery(query)}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: payload,
       signal,
     });
   } catch (error) {
@@ -74,6 +80,7 @@ async function request(method, path, { query, body, signal } = {}) {
 export const api = {
   get: (path, opts) => request('GET', path, opts),
   post: (path, body, opts) => request('POST', path, { ...opts, body }),
+  postForm: (path, form, opts) => request('POST', path, { ...opts, form }),
   put: (path, body, opts) => request('PUT', path, { ...opts, body }),
   delete: (path, opts) => request('DELETE', path, opts),
 };

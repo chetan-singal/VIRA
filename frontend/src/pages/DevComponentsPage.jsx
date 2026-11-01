@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Checkbox, PercentInput } from '../components/form/inputs';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { Panel, StatCard } from '../components/ui/Cards';
@@ -68,6 +69,18 @@ function describe(type, r) {
   if (type === 'supplierPayment') return { detail: r.supplierName, value: <Money value={r.amount} /> };
   if (type === 'party') return { detail: r.city, value: <Balance value={r.currentBalance} /> };
   return { detail: r.city, value: '—' };
+}
+
+function InputSamples() {
+  const [percent, setPercent] = useState('12.5');
+  const [checked, setChecked] = useState(true);
+  return (
+    <div className="gallery-row">
+      <div style={{ width: 140 }}><PercentInput aria-label="Discount percent" value={percent} onChange={setPercent} /></div>
+      <Checkbox label="Show shop logo" checked={checked} onChange={setChecked} />
+      <Checkbox label="Not available" checked={false} disabled onChange={() => {}} />
+    </div>
+  );
 }
 
 export default function DevComponentsPage() {
@@ -157,6 +170,17 @@ export default function DevComponentsPage() {
               <StatCard tone="orange" icon="parties" label="Party Sales" value={<Money value={289160} />} />
               <StatCard tone="purple" icon="vouchers" label="Payments Received" value={<Money value={246500} />} />
               <StatCard tone="red" icon="warning" label="Cash in Hand" value={<Money value={-1200} />} hint="Negative balance" />
+            </div>
+          </Panel>
+          <Panel title="Phase 8 building blocks">
+            <div className="stack">
+              <div className="gallery-row">
+                {rows.filter((r) => r.key === 'y1' || r.key === 'y3').map((r) => (
+                  <RowActions key={r.key} labeled type={r.type} record={r.record} ops={opsFor(r)} onChanged={() => {}} />
+                ))}
+                <Balance value={650} showDue /><Balance value={-450} showDue /><Balance value={0} showDue />
+              </div>
+              <InputSamples />
             </div>
           </Panel>
           <DeletedBanner label="party" deletedAt={NOW} onRestore={() => toast.success('Party restored (stub)')} />
