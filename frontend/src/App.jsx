@@ -4,6 +4,7 @@ import AppShell from './layout/AppShell';
 import SetupGate from './layout/SetupGate';
 import DevComponentsPage from './pages/DevComponentsPage';
 import HomePage from './pages/HomePage';
+import ItemsPage from './pages/ItemsPage';
 import PlaceholderPage, { NotFoundPage } from './pages/PlaceholderPage';
 import SetupPage from './pages/SetupPage';
 import { AppStateProvider } from './state/AppState';
@@ -19,7 +20,6 @@ const PLACEHOLDERS = [
     items: ['Include deleted bills toggle (summary stays unchanged)', 'Status column with Revised and Deleted badges', 'Bill preview pane'] },
   { path: 'parties', title: 'Parties', phase: 8, summary: 'Active and Deleted parties, with the Opening Balance set once at creation.' },
   { path: 'parties/:id', title: 'Party', phase: 8, summary: 'Selected Party page: details, payments, item rates, bills and balance summary.' },
-  { path: 'items', title: 'Items', phase: 8, summary: 'Item master, pricing and the Remove Rate Overrides action.' },
   { path: 'suppliers', title: 'Suppliers', phase: 8, summary: 'Active and Deleted suppliers.' },
   { path: 'suppliers/:id', title: 'Supplier', phase: 8, summary: 'Supplier details and payment history.' },
   { path: 'payment-vouchers', title: 'Payment Vouchers', phase: 10, summary: 'Payments received from parties, with the entry form on the right.' },
@@ -38,6 +38,7 @@ export default function App() {
               <Route path="/setup" element={<SetupPage />} />
               <Route element={<AppShell />}>
                 <Route index element={<HomePage />} />
+                <Route path="items" element={<ItemsPage />} />
                 {PLACEHOLDERS.map((p) => (
                   <Route key={p.path} path={p.path} element={<PlaceholderPage {...p} />} />
                 ))}
