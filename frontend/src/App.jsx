@@ -5,6 +5,7 @@ import SetupGate from './layout/SetupGate';
 import DevComponentsPage from './pages/DevComponentsPage';
 import HomePage from './pages/HomePage';
 import ItemsPage from './pages/ItemsPage';
+import PartiesPage from './pages/PartiesPage';
 import PlaceholderPage, { NotFoundPage } from './pages/PlaceholderPage';
 import SetupPage from './pages/SetupPage';
 import { AppStateProvider } from './state/AppState';
@@ -18,7 +19,6 @@ const PLACEHOLDERS = [
   { path: 'bills/:id/edit', title: 'Edit Bill', phase: 9, summary: 'The New Bill screen in edit mode.' },
   { path: 'daybook', title: 'Daybook', phase: 10, summary: 'Every bill, with filters, summary tiles and the row-action control.',
     items: ['Include deleted bills toggle (summary stays unchanged)', 'Status column with Revised and Deleted badges', 'Bill preview pane'] },
-  { path: 'parties', title: 'Parties', phase: 8, summary: 'Active and Deleted parties, with the Opening Balance set once at creation.' },
   { path: 'parties/:id', title: 'Party', phase: 8, summary: 'Selected Party page: details, payments, item rates, bills and balance summary.' },
   { path: 'suppliers', title: 'Suppliers', phase: 8, summary: 'Active and Deleted suppliers.' },
   { path: 'suppliers/:id', title: 'Supplier', phase: 8, summary: 'Supplier details and payment history.' },
@@ -39,6 +39,7 @@ export default function App() {
               <Route element={<AppShell />}>
                 <Route index element={<HomePage />} />
                 <Route path="items" element={<ItemsPage />} />
+                <Route path="parties" element={<PartiesPage />} />
                 {PLACEHOLDERS.map((p) => (
                   <Route key={p.path} path={p.path} element={<PlaceholderPage {...p} />} />
                 ))}
