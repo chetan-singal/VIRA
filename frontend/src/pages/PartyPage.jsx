@@ -5,6 +5,10 @@ import PartyBalanceCard from '../components/parties/PartyBalanceCard';
 import PartyInfoCard from '../components/parties/PartyInfoCard';
 import PartyKpiTiles from '../components/parties/PartyKpiTiles';
 import PartyQuickActions from '../components/parties/PartyQuickActions';
+import PartyBillsTab from '../components/parties/PartyBillsTab';
+import PartyPaymentsTab from '../components/parties/PartyPaymentsTab';
+import PartyRatesTab from '../components/parties/PartyRatesTab';
+import TransactionHistoryTab from '../components/parties/TransactionHistoryTab';
 import EditRecordModal from '../components/records/EditRecordModal';
 import RowActions from '../components/records/RowActions';
 import Button from '../components/ui/Button';
@@ -44,6 +48,7 @@ export default function PartyPage() {
   const payments = useApi((signal) => voucherApi.list({ partyId: id, size: 1 }, { signal }), [id]);
   const [tab, setTab] = useState('history');
   const [recording, setRecording] = useState(false);
+  const [version, setVersion] = useState(0);
 
   const current = party.data && String(party.data.id) === String(id) ? party.data : null;
   usePageTitle(current?.name, 'Party details');
@@ -53,6 +58,7 @@ export default function PartyPage() {
     summary.reload();
     bills.reload();
     payments.reload();
+    setVersion((v) => v + 1);
   }
 
   if (!current) {
@@ -106,9 +112,10 @@ export default function PartyPage() {
       <div className="split">
         <div className="stack" style={{ gap: 16 }}>
           <Tabs label="Party sections" tabs={TABS} active={tab} onChange={setTab} />
-          <Panel>
-            <p className="muted" style={{ margin: 0 }}>{TABS.find((t) => t.key === tab).label} will be shown here.</p>
-          </Panel>
+          {tab === 'history' && <TransactionHistoryTab key={current.id} party={current} onChanged={reloadAll} refreshKey={version} />}
+          {tab === 'bills' && <PartyBillsTab key={current.id} party={current} onChanged={reloadAll} refreshKey={version} />}
+          {tab === 'payments' && <PartyPaymentsTab key={current.id} party={current} onChanged={reloadAll} refreshKey={version} />}
+          {tab === 'rates' && <PartyRatesTab key={current.id} party={current} refreshKey={version} />}
         </div>
         <div className="stack" style={{ gap: 16 }}>
           <PartyInfoCard party={current} />
