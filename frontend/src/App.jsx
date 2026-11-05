@@ -9,6 +9,7 @@ import PartiesPage from './pages/PartiesPage';
 import PartyPage from './pages/PartyPage';
 import PlaceholderPage, { NotFoundPage } from './pages/PlaceholderPage';
 import SetupPage from './pages/SetupPage';
+import SuppliersPage from './pages/SuppliersPage';
 import { AppStateProvider } from './state/AppState';
 
 /* Screens that later phases build. Each already has its route, menu highlight and header title. */
@@ -20,8 +21,6 @@ const PLACEHOLDERS = [
   { path: 'bills/:id/edit', title: 'Edit Bill', phase: 9, summary: 'The New Bill screen in edit mode.' },
   { path: 'daybook', title: 'Daybook', phase: 10, summary: 'Every bill, with filters, summary tiles and the row-action control.',
     items: ['Include deleted bills toggle (summary stays unchanged)', 'Status column with Revised and Deleted badges', 'Bill preview pane'] },
-  { path: 'suppliers', title: 'Suppliers', phase: 8, summary: 'Active and Deleted suppliers.' },
-  { path: 'suppliers/:id', title: 'Supplier', phase: 8, summary: 'Supplier details and payment history.' },
   { path: 'payment-vouchers', title: 'Payment Vouchers', phase: 10, summary: 'Payments received from parties, with the entry form on the right.' },
   { path: 'part-search', title: 'Part Search', phase: 11, summary: 'Find a part by name, Part Category or Compatible Bike.' },
   { path: 'shop-profile', title: 'Shop Profile', phase: 8, summary: 'Shop details, logo, numbering prefixes and print settings.' },
@@ -40,6 +39,8 @@ export default function App() {
                 <Route index element={<HomePage />} />
                 <Route path="items" element={<ItemsPage />} />
                 <Route path="parties" element={<PartiesPage />} />
+                <Route path="suppliers" element={<SuppliersPage />} />
+                <Route path="suppliers/:id" element={<SuppliersPage />} />
                 <Route path="parties/:id" element={<PartyPage />} />
                 {PLACEHOLDERS.map((p) => (
                   <Route key={p.path} path={p.path} element={<PlaceholderPage {...p} />} />
