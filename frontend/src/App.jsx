@@ -9,6 +9,7 @@ import PartiesPage from './pages/PartiesPage';
 import PartyPage from './pages/PartyPage';
 import PlaceholderPage, { NotFoundPage } from './pages/PlaceholderPage';
 import SetupPage from './pages/SetupPage';
+import ShopProfilePage from './pages/ShopProfilePage';
 import SuppliersPage from './pages/SuppliersPage';
 import { AppStateProvider } from './state/AppState';
 
@@ -23,7 +24,6 @@ const PLACEHOLDERS = [
     items: ['Include deleted bills toggle (summary stays unchanged)', 'Status column with Revised and Deleted badges', 'Bill preview pane'] },
   { path: 'payment-vouchers', title: 'Payment Vouchers', phase: 10, summary: 'Payments received from parties, with the entry form on the right.' },
   { path: 'part-search', title: 'Part Search', phase: 11, summary: 'Find a part by name, Part Category or Compatible Bike.' },
-  { path: 'shop-profile', title: 'Shop Profile', phase: 8, summary: 'Shop details, logo, numbering prefixes and print settings.' },
   { path: 'settings', title: 'Settings', phase: 8, summary: 'The five preferences and Recalculate Balances.' },
 ];
 
@@ -42,6 +42,7 @@ export default function App() {
                 <Route path="suppliers" element={<SuppliersPage />} />
                 <Route path="suppliers/:id" element={<SuppliersPage />} />
                 <Route path="parties/:id" element={<PartyPage />} />
+                <Route path="shop-profile" element={<ShopProfilePage />} />
                 {PLACEHOLDERS.map((p) => (
                   <Route key={p.path} path={p.path} element={<PlaceholderPage {...p} />} />
                 ))}

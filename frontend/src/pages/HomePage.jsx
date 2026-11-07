@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardApi, daybookApi } from '../api/endpoints';
+import { dashboardApi, daybookApi, shopApi } from '../api/endpoints';
 import { Panel, StatCard } from '../components/ui/Cards';
 import Badge from '../components/ui/Badge';
 import { InlineAlert } from '../components/ui/Feedback';
@@ -25,6 +26,7 @@ const QUICK = [
 export default function HomePage() {
   const { shop } = useAppState();
   const today = todayIso();
+  const logoVersion = useMemo(() => Date.now(), [shop]); // a new address each time the shop is reloaded
   const dashboard = useApi((signal) => dashboardApi.get({ period: 'TODAY', recent: 5 }, { signal }), []);
   const day = useApi((signal) => daybookApi.list({ from: today, to: today, size: 1 }, { signal }), [today]);
 
@@ -102,8 +104,16 @@ export default function HomePage() {
           </Panel>
 
           <Panel title="Shop Details" icon="shop" flush actions={<Link to="/shop-profile" style={{ fontSize: 13, fontWeight: 600 }}>Edit</Link>}>
+            {shop?.hasLogo && (
+              <img
+                src={shopApi.logoUrl(logoVersion)}
+                alt="Shop logo"
+                style={{ display: 'block', maxWidth: 140, maxHeight: 64, objectFit: 'contain', margin: '12px 16px 0' }}
+              />
+            )}
             <dl className="kv">
               <dt>Name</dt><dd>{shop?.shopName ?? '—'}</dd>
+              {shop?.topLine && (<><dt>Top Line</dt><dd>{shop.topLine}</dd></>)}
               <dt>Phone</dt><dd>{shop?.phone || '—'}</dd>
               <dt>Address</dt>
               <dd>{[shop?.address, shop?.city, shop?.state, shop?.pinCode].filter(Boolean).join(', ') || '—'}</dd>
