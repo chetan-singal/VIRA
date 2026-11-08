@@ -8,6 +8,7 @@ import ItemsPage from './pages/ItemsPage';
 import PartiesPage from './pages/PartiesPage';
 import PartyPage from './pages/PartyPage';
 import PlaceholderPage, { NotFoundPage } from './pages/PlaceholderPage';
+import SettingsPage from './pages/SettingsPage';
 import SetupPage from './pages/SetupPage';
 import ShopProfilePage from './pages/ShopProfilePage';
 import SuppliersPage from './pages/SuppliersPage';
@@ -43,6 +44,7 @@ export default function App() {
                 <Route path="suppliers/:id" element={<SuppliersPage />} />
                 <Route path="parties/:id" element={<PartyPage />} />
                 <Route path="shop-profile" element={<ShopProfilePage />} />
+                <Route path="settings" element={<SettingsPage />} />
                 {PLACEHOLDERS.map((p) => (
                   <Route key={p.path} path={p.path} element={<PlaceholderPage {...p} />} />
                 ))}

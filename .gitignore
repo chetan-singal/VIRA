@@ -45,6 +45,9 @@ dist-electron/
 *.sqlite
 *.sqlite3
 
+# Uploaded files (shop logo)
+backend/data/
+
 # Secrets
 application-local.properties
 application-secret.properties

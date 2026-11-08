@@ -90,3 +90,12 @@
 .bill-totals dd { margin: 0; padding-left: 24px; text-align: right; font-weight: 600; }
 .bill-totals dd .row { justify-content: flex-end; }
 .bill-totals .grand { padding-top: 8px; border-top: 1px solid var(--border); font-size: 15px; font-weight: 700; color: var(--text); }
+/* ---------- Settings: Recalculate Balances ---------- */
+.maint-intro { margin: 0; font-size: 13px; color: var(--text-2); }
+.maint-cash { display: grid; grid-template-columns: minmax(0, 1fr) 150px 150px 110px; align-items: center; padding: 10px 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.maint-name { min-width: 0; padding-left: 16px; }
+.maint-figure { display: flex; flex-direction: column; gap: 2px; padding: 0 10px; text-align: right; }
+.maint-figure > span:first-child { font-size: 11px; font-weight: 600; color: var(--text-2); }
+.maint-act { padding-right: 16px; text-align: right; }
+.maint-parties { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.maint-ok { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--success); }
