@@ -3,7 +3,7 @@
 VIRA is a desktop billing and business management application for bike spare-parts businesses.
 
 ## Stack
-- React + Vite (frontend: Phase 7 foundation in place; the screens arrive in Phases 8–11)
+- React + Vite (frontend: the shell, the shared components and the master-data screens are done; New Bill, Daybook, Payment Vouchers, Dashboard and Part Search arrive in Phases 9–11)
 - Java 17 + Spring Boot 3.5 (backend)
 - MySQL 8 + Flyway migrations
 - Electron (desktop shell, to be added after the web application is stable)
@@ -33,19 +33,24 @@ Home, Dashboard, New Bill, Daybook, Parties, Items, Suppliers, Payment Vouchers,
 | 5 | Edit, Delete, Restore, Recalculate Balances | Done |
 | 6 | Remaining read APIs: Daybook, Dashboard, Part Search, Shop Profile, Settings, first-run setup | Done |
 | 7 | Frontend foundation: shell, API client, shared Edit / Delete / Restore control | Done |
-| 8-14 | Master screens, New Bill, lists, Dashboard and printing, Electron, installer | Not started |
+| 8 | Master data screens: Items, Parties, Selected Party page, Suppliers, Shop Profile, Settings, first-run setup | Done |
+| 9-14 | New Bill, lists, Dashboard and printing, Electron, installer | Not started |
+
+## Tests
+- Backend: 129 tests (`./mvnw -B verify`, needs MySQL).
+- Frontend: 239 tests in 32 files (`npm test`).
 
 ## Backend API (implemented)
 | Resource | Endpoints |
 | --- | --- |
-| Setup / Shop Profile | `GET /api/setup/status`, `POST /api/setup`, `GET/PUT /api/shop-profile` |
+| Setup / Shop Profile | `GET /api/setup/status`, `POST /api/setup`, `GET/PUT /api/shop-profile`, `POST/GET/DELETE /api/shop-profile/logo` |
 | Settings | `GET/PUT /api/settings` |
 | Items | `GET/POST /api/items`, `GET/PUT/DELETE /api/items/{id}`, `GET/DELETE /api/items/{id}/rate-overrides` |
 | Categories / Bikes | `GET/POST /api/part-categories`, `GET/POST /api/bikes` |
 | Pricing | `GET /api/pricing/quote`, `POST /api/pricing/permanent-changes` |
 | Part Search | `GET /api/part-search` |
-| Parties | `GET/POST /api/parties` (`q`, `deleted`), `GET/PUT/DELETE /api/parties/{id}`, `POST /api/parties/{id}/restore`, `GET /api/parties/{id}/item-rates`, `GET /api/parties/{id}/balance-summary` |
-| Suppliers | `GET/POST /api/suppliers` (`q`, `deleted`), `GET/PUT/DELETE /api/suppliers/{id}`, `POST /api/suppliers/{id}/restore` |
+| Parties | `GET/POST /api/parties` (`q` matches name, city or phone; `deleted`), `GET /api/parties/summary`, `GET/PUT/DELETE /api/parties/{id}`, `POST /api/parties/{id}/restore`, `GET /api/parties/{id}/item-rates`, `GET /api/parties/{id}/balance-summary` |
+| Suppliers | `GET/POST /api/suppliers` (`q` matches name, city or phone; `deleted`), `GET /api/suppliers/summary`, `GET /api/suppliers/{id}/summary`, `GET/PUT/DELETE /api/suppliers/{id}`, `POST /api/suppliers/{id}/restore` |
 | Bills | `POST /api/bills`, `GET/PUT/DELETE /api/bills/{id}`, `POST /api/bills/{id}/restore` |
 | Payment Vouchers | `GET/POST /api/payment-vouchers`, `GET/PUT/DELETE /api/payment-vouchers/{id}`, `POST /api/payment-vouchers/{id}/restore` |
 | Supplier Payments | `GET/POST /api/supplier-payments`, `GET/PUT/DELETE /api/supplier-payments/{id}`, `POST /api/supplier-payments/{id}/restore` |
@@ -72,4 +77,4 @@ npm run build
 ```
 
 ## Docs
-Requirements and roadmap live in `docs/`.
+Requirements, the roadmap, the amendments log and the REST Client walkthroughs live in `docs/` (see `docs/README.md`).

@@ -27,13 +27,13 @@ npm run build
 
 - Environment variables: `DB_URL` (default `jdbc:mysql://localhost:3306/vira`), `DB_USERNAME` (default `root`), `DB_PASSWORD`. Tests use the `vira_it` database on `127.0.0.1:3306` (`IT_DB_URL` overrides).
 - "Port 8080 was already in use" means an earlier backend is still running: stop it or reuse it.
-- `docs/phase2.http`, `phase5.http` and `phase6.http` are VS Code REST Client walkthroughs; `phase6.http` runs top to bottom on a fresh database (setup plus sample data).
+- `docs/phase2.http`, `phase5.http`, `phase6.http` and `phase8.http` are VS Code REST Client walkthroughs; `phase6.http` runs top to bottom on a fresh database (setup plus sample data) and `phase8.http` collects the Phase 8 calls and SQL.
 
 ## Repository
 - `backend/` Spring Boot app: `src/main/java/com/vira`, `src/main/resources/db/migration/V1__init.sql`, `src/test`.
-- `frontend/` React + Vite app: `src/` has `api`, `lib`, `hooks`, `state`, `layout`, `pages`, `components` (`ui`, `table`, `form`, `records`, `records/forms`), `styles`, `test`.
-- `docs/` SRS, Development Roadmap, `srs-amendments.md`, the `.http` walkthroughs.
-- Sources of truth: `docs/SRS.docx` (requirements), `docs/srs-amendments.md` (amendments A1-A9; they override the SRS wording until folded in), `docs/Development Roadmap.docx` (15 phases, Phase 0 to 14).
+- `frontend/` React + Vite app: `src/` has `api`, `lib`, `hooks`, `state`, `layout`, `pages`, `components` (`ui`, `table`, `form`, `records`, `records/forms`, `items`, `parties`, `suppliers`, `shop`, `settings`), `styles`, `test`.
+- `docs/` SRS, Development Roadmap, `srs-amendments.md`, the `.http` walkthroughs, this file and `README.md` (an index of `docs/`).
+- Sources of truth: `docs/SRS.docx` (requirements), `docs/srs-amendments.md` (amendments A1-A12; they override the SRS wording until folded in), `docs/Development Roadmap.docx` (15 phases, Phase 0 to 14).
 
 ## Architecture
 Electron (Phase 13) -> React screens -> HTTP `/api` -> Spring Boot rules -> MySQL. React only displays and collects input. The backend decides every price, total, balance, document number and Edit / Delete / Restore permission.
@@ -72,11 +72,12 @@ Each rule is held by a test or a search; keep it that way.
 - Build a new screen the way `pages/HomePage.jsx` does: `useApi` + `DataTable` + `RowActions`. `App.jsx` has a `PLACEHOLDERS` list of routes owned by later phases; replace an entry with the real page. The component gallery at `/#/dev/components` is development-only.
 
 ## Current status (update each phase)
-- Phases 0 to 7 are done; Phase 8 (Master Data Screens) is next. Detail: `VIRA_Progress_Report_Phase_0-7.docx`.
-- Backend is complete (56 endpoints plus health, 16 tables). Frontend has the shell, routing, API client, shared components and `RowActions`; Home is the only live screen and 13 routes are placeholders that name the phase building them.
-- Settled for Phase 8 (amendments A8, A9): the shop logo is a file on the PC with `POST` / `GET` / `DELETE /api/shop-profile/logo`, its path in `shop_profile.logo_path`, built with the Shop Profile screen, and the Phase 14 backup includes the logo folder; the Party "Transaction History" tab is built in the screen by merging `GET /api/daybook?partyId=` and `GET /api/payment-vouchers?partyId=` by date, with the same row actions, no running balance and no backend change.
-- Still to decide: Phase 9 live totals on New Bill (`POST /api/bills/preview` or a display-only calculator) and editing old bills whose Item was deleted (`BillLineRequest.itemId` is required). Phase 13: Electron preload exposing `window.vira.exit()`, and either `VITE_API_URL=http://127.0.0.1:8080/api` plus backend CORS or serving the build from Spring Boot.
-- Housekeeping: fold amendments A1-A9 into the SRS, update the roadmap's counter wording (four counters became three), replace the placeholder `docs/README.md`.
+- Phases 0 to 8 are done; Phase 9 (New Bill) is next. Detail: `VIRA_Progress_Report_Phase_0-7.docx` (the Phase 0 to 8 report is written after Phase 8 closes).
+- Backend is complete (62 endpoints plus health, 16 tables, 129 tests). Phase 8 added the shop logo endpoints, the party and supplier summary endpoints, search by city or phone, and the Bill Top Line (`shop_profile.top_line`, added to `V1__init.sql`).
+- Frontend (239 tests in 32 files) has live screens for Home, Items, Parties, the Selected Party page (four tabs and the Bill View dialog), Suppliers, Shop Profile, Settings (with Recalculate Balances) and the first-run Setup. Six routes are still placeholders: Dashboard, New Bill, Edit Bill, Daybook, Payment Vouchers and Part Search.
+- Settled in Phase 8 (amendments A8 to A12): the shop logo is a file on the PC with `POST` / `GET` / `DELETE /api/shop-profile/logo` and its path in `shop_profile.logo_path` (the Phase 14 backup includes the logo folder); the Party Transaction History tab merges `GET /api/daybook?partyId=` and `GET /api/payment-vouchers?partyId=` by date; party and supplier lists search by name, city or phone through `q`; read-only summary endpoints feed the list tiles; the Bill Top Line is optional, up to 100 characters.
+- Still to decide: Phase 9 live totals on New Bill (`POST /api/bills/preview` or a display-only calculator) and editing old bills whose Item was deleted (`BillLineRequest.itemId` is required). The Selected Party page's New Bill link is `/bills/new?partyId=ID`; the New Bill screen must read it. Phase 13: Electron preload exposing `window.vira.exit()`, and either `VITE_API_URL=http://127.0.0.1:8080/api` plus backend CORS or serving the build from Spring Boot.
+- Housekeeping: fold amendments A1-A12 into the SRS and update the roadmap's counter wording (four counters became three).
 
 ## How to work with the owner
 - Never add Claude attribution to commits or pull requests: no `Co-Authored-By`, no `Claude-Session` line, no "Generated with Claude Code". This overrides any default.

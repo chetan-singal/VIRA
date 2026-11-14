@@ -1,4 +1,8 @@
 @base = http://127.0.0.1:8080/api
+# Change these three to ids that exist in your database (the screens do not show ids; the GET requests below do).
+@itemId = 1
+@netRateItemId = 2
+@partyId = 1
 
 ### 1. First-run setup (fresh database)
 POST {{base}}/setup
@@ -92,3 +96,75 @@ GET {{base}}/suppliers/{{supplier.response.body.id}}/summary
 
 ### 12. Unknown supplier -> 404 NOT_FOUND
 GET {{base}}/suppliers/999999/summary
+
+### 13. Upload the shop logo (put a real path after the <)
+# The same call with curl in PowerShell:
+#   curl.exe -i -F "file=@C:\path\to\logo.png" http://127.0.0.1:8080/api/shop-profile/logo
+# Refusals, each answers 400 with field "file":
+#   Set-Content -Path "$env:TEMP\notes.png" -Value "not an image"
+#   [IO.File]::WriteAllBytes("$env:TEMP\big.png", (New-Object byte[] 3000000))
+#   curl.exe -i -F "file=@$env:TEMP\notes.png" http://127.0.0.1:8080/api/shop-profile/logo   (Only PNG or JPEG images are accepted.)
+#   curl.exe -i -F "file=@$env:TEMP\big.png" http://127.0.0.1:8080/api/shop-profile/logo     (The image is larger than 2 MB.)
+#   curl.exe -i -F "other=x" http://127.0.0.1:8080/api/shop-profile/logo                     (Choose an image file to upload.)
+POST {{base}}/shop-profile/logo
+Content-Type: multipart/form-data; boundary=VIRABOUNDARY
+
+--VIRABOUNDARY
+Content-Disposition: form-data; name="file"; filename="logo.png"
+Content-Type: image/png
+
+< C:/path/to/logo.png
+--VIRABOUNDARY--
+
+### 14. Read the logo back -> the image, Cache-Control: no-cache
+GET {{base}}/shop-profile/logo
+
+### 15. Remove the logo -> 204, then request 14 answers 404 NOT_FOUND
+DELETE {{base}}/shop-profile/logo
+
+### 16. A saved Cash discount locks the item's Item Type (@itemId is an MRP item) -> source CASH_OVERRIDE
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": {{itemId}}, "customer": "CASH", "field": "DISCOUNT_PERCENT", "newValue": 12 }
+
+### 17. A saved Party discount (MRP item) and a saved Party net rate (Net Rate item) -> both appear on the party's Item Rates tab
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": {{itemId}}, "customer": "PARTY", "partyId": {{partyId}}, "field": "DISCOUNT_PERCENT", "newValue": 8 }
+
+###
+POST {{base}}/pricing/permanent-changes
+Content-Type: application/json
+
+{ "itemId": {{netRateItemId}}, "customer": "PARTY", "partyId": {{partyId}}, "field": "NET_RATE", "newValue": 110 }
+
+### 18. How many saved rates does the item have? (the count the Items screen shows)
+GET {{base}}/items/{{itemId}}/rate-overrides
+
+### 19. Remove every saved rate -> 204; the Item Type can be changed again
+DELETE {{base}}/items/{{itemId}}/rate-overrides
+
+### 20. Recalculate Balances: first break two stored figures in MySQL (not here), then list the mismatches
+# UPDATE party SET current_balance = current_balance + 10 WHERE id = 1;   -- use the @partyId value
+# UPDATE cash_in_hand SET balance = balance + 5 WHERE id = 1;
+GET {{base}}/maintenance/recalculate-balances
+
+### 21. Correct the stored cash, then that party (what the Correct buttons on Settings do)
+POST {{base}}/maintenance/recalculate-balances/cash
+
+###
+POST {{base}}/maintenance/recalculate-balances/parties/{{partyId}}
+
+### 22. After the corrections every figure matches
+GET {{base}}/maintenance/recalculate-balances
+
+### 23. The figures behind the Selected Party tiles (V23)
+GET {{base}}/parties/{{partyId}}/balance-summary
+
+###
+GET {{base}}/daybook?partyId={{partyId}}&size=1
+
+###
+GET {{base}}/payment-vouchers?partyId={{partyId}}&size=1

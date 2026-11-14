@@ -25,7 +25,6 @@ const PLACEHOLDERS = [
     items: ['Include deleted bills toggle (summary stays unchanged)', 'Status column with Revised and Deleted badges', 'Bill preview pane'] },
   { path: 'payment-vouchers', title: 'Payment Vouchers', phase: 10, summary: 'Payments received from parties, with the entry form on the right.' },
   { path: 'part-search', title: 'Part Search', phase: 11, summary: 'Find a part by name, Part Category or Compatible Bike.' },
-  { path: 'settings', title: 'Settings', phase: 8, summary: 'The five preferences and Recalculate Balances.' },
 ];
 
 export default function App() {
